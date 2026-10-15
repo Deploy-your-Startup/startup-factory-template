@@ -14,6 +14,7 @@ test("GIVEN an empty registry and Codex WHEN init runs THEN the real CLI install
     mkdirSync(scripts);
     mkdirSync(binaries);
     mkdirSync(join(directory, ".codex"));
+    writeFileSync(join(directory, ".zshrc"), "# Installer-created profile\n");
     for (const name of ["init.sh", "registry.sh"]) {
       copyFileSync(new URL(`scripts/${name}`, root), join(scripts, name));
     }
@@ -42,7 +43,7 @@ test("GIVEN an empty registry and Codex WHEN init runs THEN the real CLI install
     const bundled = spawnSync(join(binaries, "startup"), ["skills", "show"], { encoding: "utf8" });
     assert.equal(bundled.status, 0, bundled.stderr);
     assert.equal(readFileSync(join(directory, ".agents/skills/deploy-your-startup/SKILL.md"), "utf8"), bundled.stdout);
-    assert.match(readFileSync(calls, "utf8"), /--skill sprowi-task /);
+    assert.match(readFileSync(calls, "utf8"), /^--yes skills add .*--skill sprowi-task /);
     assert.doesNotMatch(readFileSync(calls, "utf8"), /spawn-startup|deploy-your-startup/);
     assert.match(result.stdout, /Done! Projects are in/);
   } finally {

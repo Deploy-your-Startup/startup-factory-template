@@ -9,7 +9,7 @@ public tooling repositories. It contains no operator portfolio or account setup.
 
 ## Create a factory
 
-Requires macOS, Git and Startup CLI v0.1.14 or newer. The public onboarding
+Requires macOS, Git and Startup CLI v0.1.15 or newer. The public onboarding
 installs the CLI, connects GitHub and creates your own Factory before the first
 startup. Install only the CLI without starting a project, then create a Factory:
 
@@ -18,12 +18,12 @@ curl -fsSL https://deploy-your-startup.com/install.sh | bash
 gh auth login -h github.com -p https -s repo,workflow,read:packages,write:packages
 gh auth setup-git
 startup doctor
-startup factory init --version v0.1.0 --project-dir my-factory --setup
+startup factory init --version v0.1.1 --project-dir my-factory --setup
 cd my-factory
 startup bootstrap
 ```
 
-The CLI pins this template's v0.1.0 release. `--setup` installs missing workspace
+The CLI pins this template's v0.1.1 release. `--setup` installs missing workspace
 tools through Homebrew when available, installs the declared mise runtimes and
 clones the public tooling. Without Homebrew, follow the printed prerequisites
 and rerun the same command. Existing Factory files survive retries. Initializing

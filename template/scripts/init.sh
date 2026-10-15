@@ -1,9 +1,9 @@
 #!/bin/bash
 set -euo pipefail
 
-# Ensure full PATH is available (homebrew, uv, etc.)
+# Preserve the runtime selected by mise and the CLI launcher.
 if [ -f "$HOME/.zshrc" ]; then
-  export PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
+  export PATH="$PATH:$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin"
 fi
 
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
@@ -67,7 +67,7 @@ if [ "$missing" -gt 0 ]; then
   echo ""
   echo "Install hints:"
   echo "  kubectl:  brew install kubectl"
-  echo "  startup:  uv tool install --python 3.14 'git+https://github.com/Deploy-your-Startup/cli.git@v0.1.14'"
+  echo "  startup:  uv tool install --python 3.14 'git+https://github.com/Deploy-your-Startup/cli.git@v0.1.15'"
   echo "  uv:       curl -LsSf https://astral.sh/uv/install.sh | sh"
   echo "  gh:       brew install gh"
   echo "  yq:       brew install yq"
@@ -95,7 +95,7 @@ echo "Installing startup-factory skills..."
 if command -v npx &>/dev/null; then
   for skill in sprowi-task; do
     echo -n "  ⟳ $skill — installing... "
-    if npx skills add "$root_dir" --skill "$skill" -a claude-code -a codex -a opencode --copy -y >/dev/null 2>&1; then
+    if npx --yes skills add "$root_dir" --skill "$skill" -a claude-code -a codex -a opencode --copy -y >/dev/null 2>&1; then
       echo -e "${GREEN}done${NC}"
     else
       echo -e "${RED}failed${NC}"
