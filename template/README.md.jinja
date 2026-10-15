@@ -1,0 +1,89 @@
+# {{ project_name }}
+
+Build and operate your startups in your own accounts, using shared knowledge,
+automation and tooling from [Deploy Your Startup](https://deploy-your-startup.com).
+This Factory starts with no personal startups. Public tooling repositories are
+included so you can learn from them and contribute improvements.
+Read [VISION.md](VISION.md) and [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Set up your workspace
+
+The supported operational environment is macOS. Guided
+[onboarding](https://deploy-your-startup.com/get-started) creates and sets up this
+workspace automatically. To resume setup manually, use Startup CLI v0.1.14 or
+newer, install the workspace tools and connect GitHub:
+
+```bash
+brew install mise yq kubectl gh
+# Install uv if it is not already available; see https://docs.astral.sh/uv/
+gh auth login -h github.com -p https -s repo,workflow,read:packages,write:packages
+gh auth setup-git
+startup doctor
+mise trust
+mise install
+mise exec -- ./scripts/init.sh
+```
+
+Review `projects.yaml` first. Setup clones the public tooling over HTTPS; it does
+not provision servers or deploy an application. Existing project directories are
+preserved. If setup reports a clone failure, fix the error and rerun it. Agent
+skill installation needs a configured coding agent; follow the printed guidance.
+
+Initialize Git if this workspace is not already its own repository, review the
+files and commit them, including `.copier-answers.yml`. Use your own repository
+for the portfolio; do not publish private project metadata unintentionally.
+
+## Add your first startup
+
+From this workspace root, run:
+
+```bash
+startup bootstrap --output-dir projects/startups
+```
+
+Review the provider costs and complete the CLI's prompts. The CLI registers the
+created Git repository in `projects.yaml`, including when setup needs to resume.
+It records deployment status only after separate live verification.
+For a repository created outside bootstrap, clone it under `projects/startups`
+and run `startup factory register projects/startups/example-app`. The entry uses
+its actual remote:
+
+```yaml
+projects:
+  - name: example-app
+    repo: https://github.com/example-owner/example-app.git
+```
+
+Record a project even when bootstrap needs to resume. Add `deployed: true`, `url`
+and `kubectl_context` only after verifying Actions, DNS, HTTPS and cluster access.
+For full-stack deployments, `startup verify --working-directory
+projects/startups/example-app` checks the deployment. Follow AGENTS.md for legal
+onboarding and security checks before public launch.
+
+Run `mise tasks --all` to discover project commands. Use `scripts/sync.sh` to pull
+the hub and registered repositories on another configured machine.
+
+## Keep the shared foundation up to date
+
+From a clean, committed workspace, select a published release:
+
+```bash
+startup template update --version <release-tag> --dry-run
+startup template update --version <release-tag>
+```
+
+Review the diff, resolve conflicts, run `mise run test` and commit the update with
+`.copier-answers.yml`. Your startup registry and Sprowi settings are preserved.
+Review release notes for optional changes to those owner-managed files; new
+registry entries and Sprowi defaults are not applied automatically.
+
+Application repositories have their own template updates. `startup sync` handles
+shared deployment roles/workflows separately. Pulling this workspace with Git
+does not apply upstream Factory template changes.
+
+## Optional agent loop
+
+Run `scripts/init.sh --with-sprowi` only when you want the Sprowi agent loop. It needs
+Docker Desktop, sbx and an engine account. See [docs/sprowi.md](docs/sprowi.md) for
+setup, budgets, experiments and publishing with your own GitHub App. No App ID,
+personal task history or production credentials are bundled.

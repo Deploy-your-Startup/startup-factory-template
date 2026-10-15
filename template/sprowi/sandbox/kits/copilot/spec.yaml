@@ -1,0 +1,37 @@
+# Copilot CLI uses its own proxy-managed credential so the business-account
+# endpoint is covered without redefining the built-in github service.
+schemaVersion: "2"
+kind: mixin
+name: sprowi-copilot
+args:
+  cli:
+    required: true
+    description: Pinned Copilot CLI package, engines.copilot.cli
+credentials:
+  - service: sprowi-copilot
+    required: true
+    apiKey:
+      name: COPILOT_GITHUB_TOKEN
+      proxyManaged: true
+      inject:
+        - domain: api.github.com
+          header: Authorization
+          format: "Bearer %s"
+        - domain: api.githubcopilot.com
+          header: Authorization
+          format: "Bearer %s"
+        - domain: api.business.githubcopilot.com
+          header: Authorization
+          format: "Bearer %s"
+permissions:
+  network:
+    deny:
+      - api.anthropic.com
+      - api.openai.com
+      - github.com
+      # Content hosts only: pkg-containers.githubusercontent.com stays reachable
+      # because ghcr.io serves public image layers from it.
+      - raw.githubusercontent.com
+      - gist.githubusercontent.com
+      - objects.githubusercontent.com
+      - avatars.githubusercontent.com

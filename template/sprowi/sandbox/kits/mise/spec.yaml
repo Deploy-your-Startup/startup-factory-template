@@ -1,0 +1,12 @@
+# mise is not in the sandbox images, but the projects pin their runtime in
+# mise.toml. Without it the checks would run against whatever node the image
+# happens to ship instead of the version the project declares.
+#
+# Installed from npm on purpose: the official installer downloads its binary
+# from github.com, which every Sprowi kit denies.
+schemaVersion: "2"
+kind: mixin
+name: sprowi-mise
+setup:
+  install:
+    - command: npm install --global mise@2026.9.11

@@ -1,0 +1,19 @@
+monorepo_root = true
+
+[tools]
+node = "24"
+
+[tasks."sprowi:test"]
+description = "Exercise Sprowi publishing and idea experiments through the real CLI"
+run = "scripts/sprowi.sh test"
+
+[monorepo]
+config_roots = [
+  "projects/startups/*",
+  "projects/tooling/*",
+]
+lockfile = false
+
+[tasks.test]
+description = "Check the Factory scripts and Sprowi workflows locally"
+run = "node --test scripts/tests/*.test.mjs sprowi/*.integration.test.mjs"

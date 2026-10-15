@@ -1,0 +1,12 @@
+_min_copier_version: '9.18.2'
+_subdirectory: template
+_templates_suffix: .jinja
+# Seed owner files once. Future releases update the harness, not the portfolio.
+_skip_if_exists:
+  - projects.yaml
+  - sprowi/config.default.json
+  - sprowi/projects/**
+project_name:
+  type: str
+  default: my-factory
+  help: Name of your factory workspace

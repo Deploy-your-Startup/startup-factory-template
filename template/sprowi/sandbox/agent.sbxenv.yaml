@@ -1,0 +1,41 @@
+# Shared shape of the agent sandbox. An engine overlay is layered on top:
+#   sbx env create agent.sbxenv.yaml claude.sbxenv.yaml --env-arg ...
+schemaVersion: "1"
+name: ${{ env.args.name }}
+agent: ${{ env.args.engine }}
+args:
+  name:
+    required: true
+  engine:
+    required: true
+    enum: [claude, codex, opencode, copilot]
+  workspace:
+    required: true
+    description: Throwaway checkout of the project baseline
+  input:
+    required: true
+    description: Task documents and the trusted copy of the Sprowi scripts
+  output:
+    required: true
+  config:
+    required: true
+  secretCommand:
+    required: true
+    description: Host command that prints the engine credential
+workspace: ${{ env.args.workspace }}
+additionalWorkspaces:
+  # Read-only: the agent runs these scripts, so it must not be able to rewrite
+  # them between rounds.
+  - path: ${{ env.args.input }}
+    readOnly: true
+  - path: ${{ env.args.output }}
+env:
+  SPROWI_ENGINE: ${{ env.args.engine }}
+  SPROWI_CONFIG: ${{ env.args.config }}
+  SPROWI_INPUT_DIR: ${{ env.args.input }}
+  SPROWI_OUTPUT_DIR: ${{ env.args.output }}
+  SPROWI_WORKSPACE: ${{ env.args.workspace }}
+sandboxOptions:
+  cpus: 4
+  memory: 8g
+  skills: off

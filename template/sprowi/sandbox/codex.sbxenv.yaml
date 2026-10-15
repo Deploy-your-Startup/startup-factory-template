@@ -1,0 +1,19 @@
+schemaVersion: "1"
+args:
+  accountId:
+    required: true
+    description: ChatGPT account id, required as a header by the codex backend
+env:
+  SPROWI_CHATGPT_ACCOUNT_ID: ${{ env.args.accountId }}
+kits:
+  - ./kits/mise
+  - ./kits/images
+  - source: ./kits/codex
+secrets:
+  sprowi-codex:
+    command: ${{ env.args.secretCommand }}
+bindings:
+  sprowi-codex:
+    apiKey:
+      domains:
+        - chatgpt.com

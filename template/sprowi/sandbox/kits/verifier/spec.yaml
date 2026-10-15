@@ -1,0 +1,15 @@
+# The verifier needs no model and no GitHub access. It still reaches package
+# registries, because setupCommands install the project's dependencies here.
+schemaVersion: "2"
+kind: mixin
+name: sprowi-verifier
+permissions:
+  network:
+    deny:
+      - api.anthropic.com
+      - api.openai.com
+      - openrouter.ai
+      - api.githubcopilot.com
+      - api.business.githubcopilot.com
+      - github.com
+      - api.github.com

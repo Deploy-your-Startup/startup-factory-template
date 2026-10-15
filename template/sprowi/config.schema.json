@@ -1,0 +1,271 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:deploy-your-startup:factory:sprowi:config",
+  "title": "Sprowi configuration",
+  "description": "Describes both sprowi/config.default.json (the full defaults) and sprowi/projects/<name>.json (an overlay merged over them). Nothing is required, because an overlay only carries what it changes.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "version": {
+      "const": 1
+    },
+    "engine": {
+      "description": "Engine used when `run` is called without --engine.",
+      "enum": [
+        "claude",
+        "codex",
+        "opencode",
+        "copilot"
+      ]
+    },
+    "engines": {
+      "description": "Per-engine settings. An overlay may change any of them; the credential and limits objects are merged field by field.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "claude": {
+          "$ref": "#/$defs/engine"
+        },
+        "codex": {
+          "$ref": "#/$defs/engine"
+        },
+        "opencode": {
+          "$ref": "#/$defs/engine"
+        },
+        "copilot": {
+          "$ref": "#/$defs/engine"
+        }
+      }
+    },
+    "limits": {
+      "description": "Bounds for the whole run, independent of the engine.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "maxSteps": {
+          "description": "Agent turns per engine call. Handed to the CLI (claude --max-turns, the OpenCode agent's steps).",
+          "type": "integer",
+          "minimum": 1
+        },
+        "maxRounds": {
+          "description": "implement \u2192 verify \u2192 review cycles before the run gives up. Overridden per run by --rounds.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "maxPatchBytes": {
+          "description": "A larger patch is rejected by the policy, before it is ever verified.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "maxChangedFiles": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "inputFiles": {
+      "description": "Filenames of the task documents inside a task directory. Only `task` is required to exist; the other two are optional, which is what lets the same loop take a sharp feature and a vague idea.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "task": {
+          "type": "string",
+          "minLength": 1
+        },
+        "acceptanceTests": {
+          "type": "string",
+          "minLength": 1
+        },
+        "loop": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "allowedPaths": {
+      "description": "A patch may only touch paths matching one of these. Glob rules: `*` stays inside one segment, `**` crosses segments, and `dir/**` also matches `dir` itself.",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/pathPattern"
+      }
+    },
+    "protectedPaths": {
+      "description": "Wins over allowedPaths: a patch touching one of these is rejected whole. The defaults cover the paths where a change would either deploy something or escape the checks (deployment, workflows, make.sh, mise.toml, lockfiles, Dockerfiles, .env). Widen per project; narrow only with a reason you can say out loud.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/pathPattern"
+      }
+    },
+    "cachePaths": {
+      "description": "Dependency directories. They survive the workspace reset between rounds, so setupCommands run once per sandbox instead of once per round, and they are excluded from git so they can never reach the patch.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/pathPattern"
+      }
+    },
+    "setupCommands": {
+      "description": "Run once per sandbox, in both the agent and the verifier sandbox, before anything else. This is where dependencies are installed. Runs without any credential.",
+      "$ref": "#/$defs/commandGroup"
+    },
+    "acceptanceCommands": {
+      "description": "The definition of \"verified\". Run in order in the credential-free verifier sandbox, against a clean checkout with the patch applied; the first failure is handed back to the agent as feedback. Anything not listed here is invisible to the loop, and an empty object is refused. Run `scripts/sprowi.sh check <project>` to confirm they pass on an untouched checkout.",
+      "$ref": "#/$defs/commandGroup"
+    },
+    "publish": {
+      "description": "What --publish does after a verified run.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "branchPrefix": {
+          "description": "Branch name is this plus the task directory name.",
+          "type": "string"
+        },
+        "draft": {
+          "type": "boolean"
+        },
+        "app": {
+          "description": "The GitHub App that publishes, if there is one. With an id set, Sprowi mints a short-lived installation token from the App's private key for every publish, pushes over HTTPS as the App, and authors the commits as its bot. Without one it falls back to SPROWI_GITHUB_TOKEN, the Keychain item SPROWI_GITHUB, and finally the ambient gh login.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "description": "The App ID from its settings page. null disables App publishing.",
+              "type": ["integer", "string", "null"]
+            },
+            "keyService": {
+              "description": "Keychain service holding the App's PEM private key, base64-encoded on one line.",
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "author": {
+          "description": "Commit author when no GitHub App is configured. With publish.app.id set, the App's own bot identity is looked up and used instead.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "type": "string",
+              "minLength": 1
+            },
+            "email": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "pathPattern": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Repository-relative glob. No leading slash, no `..`."
+    },
+    "commandGroup": {
+      "type": "object",
+      "description": "Name \u2192 argv. The name appears in the feedback the agent receives, so make it say what broke.",
+      "additionalProperties": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+          "type": "string"
+        },
+        "description": "argv, not a shell line: the first item is the program, and no shell interprets it. `scripts/sprowi.sh init` emits [\"mise\", \"run\", \"backend:lint\"], because a mise task already carries the directory it runs in and the runtime the project pins."
+      }
+    },
+    "engine": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "cli": {
+          "description": "npm package installed into the sandbox, pinned. Only opencode and copilot have one; the claude and codex sandbox images ship their CLI.",
+          "type": "string",
+          "minLength": 1
+        },
+        "model": {
+          "description": "Passed to the CLI verbatim. For opencode the first segment is also the provider name, and everything after it is the model id that endpoint expects.",
+          "type": "string",
+          "minLength": 1
+        },
+        "reasoningEffort": {
+          "description": "null for claude, which has no such flag.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max",
+            null
+          ]
+        },
+        "upstreamUrl": {
+          "description": "The endpoint the engine talks to. Its host is the one host the credential is injected for. For opencode a URL ending in /responses selects the Responses transport; for codex this is the ChatGPT backend that a subscription login is allowed to use.",
+          "type": "string",
+          "format": "uri"
+        },
+        "credential": {
+          "description": "How the engine authenticates. sbx resolves the secret on the host; the sandbox only ever sees a placeholder in `env`.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "service": {
+              "description": "macOS Keychain service name, read by the command sbx runs on the host. Override that command with SPROWI_SECRET_COMMAND.",
+              "type": "string",
+              "minLength": 1
+            },
+            "env": {
+              "description": "Environment variable inside the sandbox that holds the placeholder. Must match credentials.apiKey.name in sprowi/sandbox/kits/<engine>/spec.yaml.",
+              "type": "string",
+              "pattern": "^[A-Z][A-Z0-9_]*$"
+            },
+            "command": {
+              "description": "A host command printing the credential, used instead of reading the Keychain service. Codex needs this because its subscription token is refreshed in ~/.codex/auth.json every few days, so a copy in the Keychain would go stale. Overridden for one run by SPROWI_SECRET_COMMAND.",
+              "type": "string"
+            }
+          }
+        },
+        "limits": {
+          "description": "Budget for the whole run: every call gets what the earlier calls left over.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "maxTotalTokens": {
+              "description": "A runaway guard, not a budget. For claude and opencode this sums each step's full context, cached reads included, so a one-line change can report hundreds of thousands of tokens while costing cents; keep it high and control spend with maxCostUsd. Codex reports cumulative per-turn totals and no cost at all, so there it is both realistic and the only control.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "maxOutputTokensPerRequest": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "maxCostUsd": {
+              "description": "The meaningful budget where the engine reports cost. Codex reports none, so this never triggers there.",
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "maxAiCredits": {
+              "description": "copilot only. One credit is one US cent, and the CLI enforces the cap itself.",
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        "accountIdCommand": {
+          "description": "codex only: a host command printing the ChatGPT account id, which the backend requires as a header next to the bearer token. Not a secret, so it is passed into the sandbox as a plain environment variable.",
+          "type": "string"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,17 @@
+/projects/
+.claude/settings.local.json
+.claude/skills/
+.agents/
+.codex/
+.opencode/
+.DS_Store
+.rtk/
+.worktrees/
+dry-run-output/
+/experiments/
+__pycache__/
+*.pyc
+.venv/
+node_modules/
+
+/sprowi/runs/

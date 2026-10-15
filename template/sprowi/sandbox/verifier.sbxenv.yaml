@@ -1,0 +1,31 @@
+# Runs setup and the acceptance commands against the applied patch. It has no
+# model credential, so a check cannot spend tokens or reach a provider.
+schemaVersion: "1"
+name: ${{ env.args.name }}
+agent: shell
+args:
+  name:
+    required: true
+  workspace:
+    required: true
+  input:
+    required: true
+  output:
+    required: true
+  config:
+    required: true
+workspace: ${{ env.args.workspace }}
+additionalWorkspaces:
+  - path: ${{ env.args.input }}
+    readOnly: true
+  - path: ${{ env.args.output }}
+env:
+  SPROWI_CONFIG: ${{ env.args.config }}
+kits:
+  - ./kits/mise
+  - ./kits/images
+  - ./kits/verifier
+sandboxOptions:
+  cpus: 4
+  memory: 8g
+  skills: off

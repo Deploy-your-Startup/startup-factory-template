@@ -1,0 +1,12 @@
+# Public container registries serve image layers from CDN hosts that are not
+# the registry's own name. E2E suites pull their helper images (a mock OIDC
+# provider, oauth2-proxy) into the sandbox's own Docker daemon, so the layer
+# hosts have to be reachable too. Pull-only: no sandbox holds a registry token.
+schemaVersion: "2"
+kind: mixin
+name: sprowi-images
+permissions:
+  network:
+    allow:
+      - "*.quay.io"
+      - playwright.download.prss.microsoft.com

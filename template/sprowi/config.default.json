@@ -1,0 +1,110 @@
+{
+  "$schema": "./config.schema.json",
+  "version": 1,
+  "engine": "claude",
+  "engines": {
+    "claude": {
+      "model": "claude-haiku-4-5-20251001",
+      "reasoningEffort": null,
+      "credential": {
+        "service": "SPROWI_CLAUDE",
+        "env": "ANTHROPIC_AUTH_TOKEN"
+      },
+      "limits": {
+        "maxCostUsd": 3
+      }
+    },
+    "codex": {
+      "model": "gpt-5.6-luna",
+      "reasoningEffort": "high",
+      "credential": {
+        "service": "SPROWI_CODEX",
+        "env": "OPENAI_API_KEY",
+        "command": "python3 -c \"import json,os;print(json.load(open(os.path.expanduser('~/.codex/auth.json')))['tokens']['access_token'])\""
+      },
+      "limits": {
+        "maxTotalTokens": 5000000,
+        "maxCostUsd": 3
+      },
+      "upstreamUrl": "https://chatgpt.com/backend-api/codex",
+      "accountIdCommand": "python3 -c \"import json,os;print(json.load(open(os.path.expanduser('~/.codex/auth.json')))['tokens']['account_id'])\""
+    },
+    "opencode": {
+      "cli": "opencode-ai@1.18.29",
+      "model": "openrouter/anthropic/claude-sonnet-4.5",
+      "reasoningEffort": "high",
+      "upstreamUrl": "https://openrouter.ai/api/v1",
+      "credential": {
+        "service": "SPROWI_OPENROUTER",
+        "env": "OPENROUTER_API_KEY"
+      },
+      "limits": {
+        "maxOutputTokensPerRequest": 32000,
+        "maxCostUsd": 3
+      }
+    },
+    "copilot": {
+      "cli": "@github/copilot@1.0.83",
+      "model": "gpt-5.6-luna",
+      "reasoningEffort": "high",
+      "credential": {
+        "service": "SPROWI_COPILOT",
+        "env": "COPILOT_GITHUB_TOKEN"
+      },
+      "limits": {
+        "maxAiCredits": 300
+      }
+    }
+  },
+  "limits": {
+    "maxSteps": 40,
+    "maxRounds": 3,
+    "maxPatchBytes": 2097152,
+    "maxChangedFiles": 100
+  },
+  "inputFiles": {
+    "task": "task.md",
+    "loop": "loop.md",
+    "acceptanceTests": "acceptance-tests.md"
+  },
+  "allowedPaths": [
+    "**"
+  ],
+  "protectedPaths": [
+    ".git/**",
+    ".github/**",
+    "deployment/**",
+    "**/deployment/**",
+    ".env",
+    "**/.env",
+    "make.sh",
+    "**/make.sh",
+    "mise.toml",
+    "**/mise.toml",
+    "Dockerfile",
+    "**/Dockerfile",
+    "package-lock.json",
+    "**/package-lock.json",
+    "uv.lock",
+    "**/uv.lock"
+  ],
+  "cachePaths": [
+    "node_modules",
+    "*/node_modules",
+    ".venv",
+    "*/.venv"
+  ],
+  "setupCommands": {},
+  "acceptanceCommands": {},
+  "publish": {
+    "branchPrefix": "sprowi/",
+    "draft": true,
+    "app": {
+      "keyService": "SPROWI_GITHUB_KEY"
+    },
+    "author": {
+      "name": "Sprowi",
+      "email": "sprowi@users.noreply.github.com"
+    }
+  }
+}

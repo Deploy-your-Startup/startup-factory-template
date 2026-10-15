@@ -1,0 +1,38 @@
+# OpenCode talks to the configured gateway directly; the host proxy injects the
+# key for that one host. With the committed default that host is OpenRouter.
+schemaVersion: "2"
+kind: mixin
+name: sprowi-opencode
+args:
+  cli:
+    required: true
+    description: Pinned OpenCode package, engines.opencode.cli
+  modelHost:
+    required: true
+    description: Host of engines.opencode.upstreamUrl
+credentials:
+  - service: sprowi-openrouter
+    required: true
+    apiKey:
+      name: OPENROUTER_API_KEY
+      proxyManaged: true
+      inject:
+        - domain: ${{ kit.args.modelHost }}
+          header: Authorization
+          format: "Bearer %s"
+permissions:
+  network:
+    deny:
+      - api.anthropic.com
+      - api.openai.com
+      - github.com
+      - api.github.com
+      # Content hosts only: pkg-containers.githubusercontent.com stays reachable
+      # because ghcr.io serves public image layers from it.
+      - raw.githubusercontent.com
+      - gist.githubusercontent.com
+      - objects.githubusercontent.com
+      - avatars.githubusercontent.com
+setup:
+  install:
+    - command: npm install --global ${{ kit.args.cli }}

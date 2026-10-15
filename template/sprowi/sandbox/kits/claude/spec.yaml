@@ -1,0 +1,32 @@
+# Claude Code authenticates with the token from `claude setup-token`, so the run
+# bills the subscription instead of an API key.
+#
+# ANTHROPIC_AUTH_TOKEN, not CLAUDE_CODE_OAUTH_TOKEN: the CLI validates an OAuth
+# token locally before it sends anything, so a placeholder never survives that
+# path ("Not logged in", no request). ANTHROPIC_AUTH_TOKEN is the gateway path
+# and ranks above it — the CLI puts the value straight into the Authorization
+# header, which is exactly where the host proxy swaps in the real token.
+schemaVersion: "2"
+kind: mixin
+name: sprowi-claude
+credentials:
+  - service: sprowi-claude
+    required: true
+    apiKey:
+      name: ANTHROPIC_AUTH_TOKEN
+      proxyManaged: true
+      inject:
+        - domain: api.anthropic.com
+          header: Authorization
+          format: "Bearer %s"
+permissions:
+  network:
+    deny:
+      - github.com
+      - api.github.com
+      # Content hosts only: pkg-containers.githubusercontent.com stays reachable
+      # because ghcr.io serves public image layers from it.
+      - raw.githubusercontent.com
+      - gist.githubusercontent.com
+      - objects.githubusercontent.com
+      - avatars.githubusercontent.com

@@ -1,0 +1,21 @@
+schemaVersion: "1"
+args:
+  modelHost:
+    required: true
+  cli:
+    required: true
+kits:
+  - ./kits/mise
+  - ./kits/images
+  - source: ./kits/opencode
+    args:
+      cli: ${{ env.args.cli }}
+      modelHost: ${{ env.args.modelHost }}
+secrets:
+  sprowi-openrouter:
+    command: ${{ env.args.secretCommand }}
+bindings:
+  sprowi-openrouter:
+    apiKey:
+      domains:
+        - ${{ env.args.modelHost }}

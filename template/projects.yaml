@@ -1,0 +1,22 @@
+# Your startups belong here. Tooling is included so everyone can contribute.
+projects: []
+
+tooling:
+  - name: cli
+    repo: https://github.com/Deploy-your-Startup/cli.git
+    description: Startup CLI and bundled agent skills
+  - name: deploy-template
+    repo: https://github.com/Deploy-your-Startup/deploy-template.git
+    description: Shared deployment roles and workflows
+  - name: django-backend-template
+    repo: https://github.com/Deploy-your-Startup/django-backend-template.git
+    description: Django and FastAPI application template
+  - name: vue-django-template
+    repo: https://github.com/Deploy-your-Startup/vue-django-template.git
+    description: Vue, Django and FastAPI application template
+  - name: pitch-template
+    repo: https://github.com/Deploy-your-Startup/pitch-template.git
+    description: Astro landing page template
+  - name: startup-factory-template
+    repo: https://github.com/Deploy-your-Startup/startup-factory-template.git
+    description: Reusable Factory workspace and agent loop

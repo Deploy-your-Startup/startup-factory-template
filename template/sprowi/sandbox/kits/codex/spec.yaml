@@ -1,0 +1,33 @@
+# Codex authenticates with the ChatGPT subscription login, not an API key: the
+# token in ~/.codex/auth.json is a bearer the ChatGPT backend accepts, while the
+# public API rejects it for missing scopes. The host proxy swaps the placeholder
+# into the Authorization header, so the token never enters the sandbox.
+#
+# The backend also requires the account id as a header. That is not a secret,
+# so it travels as a plain environment variable and is read by the generated
+# provider configuration.
+schemaVersion: "2"
+kind: mixin
+name: sprowi-codex
+credentials:
+  - service: sprowi-codex
+    required: true
+    apiKey:
+      name: OPENAI_API_KEY
+      proxyManaged: true
+      inject:
+        - domain: chatgpt.com
+          header: Authorization
+          format: "Bearer %s"
+permissions:
+  network:
+    deny:
+      - api.anthropic.com
+      - github.com
+      - api.github.com
+      # Content hosts only: pkg-containers.githubusercontent.com stays reachable
+      # because ghcr.io serves public image layers from it.
+      - raw.githubusercontent.com
+      - gist.githubusercontent.com
+      - objects.githubusercontent.com
+      - avatars.githubusercontent.com

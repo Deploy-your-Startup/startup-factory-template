@@ -1,0 +1,20 @@
+schemaVersion: "1"
+args:
+  cli:
+    required: true
+kits:
+  - ./kits/mise
+  - ./kits/images
+  - source: ./kits/copilot
+    args:
+      cli: ${{ env.args.cli }}
+secrets:
+  sprowi-copilot:
+    command: ${{ env.args.secretCommand }}
+bindings:
+  sprowi-copilot:
+    apiKey:
+      domains:
+        - api.github.com
+        - api.githubcopilot.com
+        - api.business.githubcopilot.com

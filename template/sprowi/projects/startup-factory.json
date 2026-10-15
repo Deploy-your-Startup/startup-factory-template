@@ -1,0 +1,18 @@
+{
+  "$schema": "../config.schema.json",
+  "allowedPaths": ["ideas/**"],
+  "protectedPaths": [
+    ".git/**",
+    ".github/**",
+    "sprowi/**",
+    "scripts/**",
+    "projects/**",
+    "projects.yaml",
+    "AGENTS.md",
+    "CLAUDE.md"
+  ],
+  "setupCommands": {},
+  "acceptanceCommands": {
+    "ideas": ["node", "scripts/check-ideas.mjs"]
+  }
+}

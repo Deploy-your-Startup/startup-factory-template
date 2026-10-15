@@ -1,0 +1,13 @@
+schemaVersion: "1"
+kits:
+  - ./kits/mise
+  - ./kits/images
+  - source: ./kits/claude
+secrets:
+  sprowi-claude:
+    command: ${{ env.args.secretCommand }}
+bindings:
+  sprowi-claude:
+    apiKey:
+      domains:
+        - api.anthropic.com
