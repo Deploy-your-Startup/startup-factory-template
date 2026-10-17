@@ -67,7 +67,7 @@ if [ "$missing" -gt 0 ]; then
   echo ""
   echo "Install hints:"
   echo "  kubectl:  brew install kubectl"
-  echo "  startup:  uv tool install --python 3.14 'git+https://github.com/Deploy-your-Startup/cli.git@v0.1.15'"
+  echo "  startup:  uv tool install --python 3.14 'git+https://github.com/Deploy-your-Startup/cli.git@v0.1.17'"
   echo "  uv:       curl -LsSf https://astral.sh/uv/install.sh | sh"
   echo "  gh:       brew install gh"
   echo "  yq:       brew install yq"
