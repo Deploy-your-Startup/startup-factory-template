@@ -14,7 +14,7 @@ workspace automatically. To resume setup manually, use Startup CLI v0.1.15 or
 newer, install the workspace tools and connect GitHub:
 
 ```bash
-brew install mise yq kubectl gh
+brew install mise yq gh
 # Install uv if it is not already available; see https://docs.astral.sh/uv/
 gh auth login -h github.com -p https -s repo,workflow,read:packages,write:packages
 gh auth setup-git
@@ -28,6 +28,9 @@ Review `projects.yaml` first. Setup clones the public tooling over HTTPS; it doe
 not provision servers or deploy an application. Existing project directories are
 preserved. If setup reports a clone failure, fix the error and rerun it. Agent
 skill installation needs a configured coding agent; follow the printed guidance.
+You do not need Kubernetes knowledge to test an idea: bootstrap, deployment and
+landing pages work without `kubectl`. Install it (`brew install kubectl`) only
+when you want to inspect a full-stack startup's cluster yourself.
 
 Initialize Git if this workspace is not already its own repository, review the
 files and commit them, including `.copier-answers.yml`. Use your own repository
