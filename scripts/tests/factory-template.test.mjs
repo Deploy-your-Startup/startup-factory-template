@@ -55,7 +55,10 @@ test("GIVEN a generated factory with owner data WHEN previewing and applying the
     const registry = readFileSync(join(factory, "projects.yaml"), "utf8");
     assert.match(registry, /projects: \[\]/);
     for (const name of ["cli", "deploy-template", "django-backend-template", "vue-django-template", "pitch-template"]) assert.ok(registry.includes(`name: ${name}`));
-    assert.ok(!registry.includes("startup-factory-mod"));
+    assert.ok(registry.includes("name: startup-factory-mod"));
+    const claudeSettings = JSON.parse(readFileSync(join(factory, ".claude/settings.json"), "utf8"));
+    assert.equal(claudeSettings.extraKnownMarketplaces["startup-factory-mod"].source.repo, "Deploy-your-Startup/startup-factory-mod");
+    assert.equal(claudeSettings.enabledPlugins["startup-factory@startup-factory-mod"], true);
     assert.ok(!JSON.parse(readFileSync(join(factory, "sprowi/config.default.json"), "utf8")).publish.app.id);
     assert.ok(!existsSync(join(factory, "sprowi/tasks")));
     assert.ok(!existsSync(join(factory, "copier.yml")));

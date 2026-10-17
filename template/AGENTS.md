@@ -19,6 +19,11 @@ command applies a new Factory template release. Never run setup against an
 unreviewed registry. Verify `url`, `deployed` and `kubectl_context` against live
 state before adding them; keep one context with the right namespace per startup.
 
+`.claude/settings.json` enables the public `startup-factory` Claude Code mod from
+[Deploy-your-Startup/startup-factory-mod](https://github.com/Deploy-your-Startup/startup-factory-mod):
+a `/factory` pane with website status, pod health and git state read from this
+registry. Accurate `url`, `deployed` and `kubectl_context` values keep it correct.
+
 ## Creating and updating projects
 
 Use `startup bootstrap --output-dir projects/startups` from the workspace root.
@@ -79,4 +84,4 @@ experiments belong to this owner. The stable `startup-factory` target refers to
 this hub regardless of its directory name. See docs/sprowi.md for budgets, sandbox
 boundaries and publishing. Never run an engine or publish without authorization.
 
-No personal plugin or agent settings are shipped with this workspace.
+Apart from that public mod, no plugin or agent settings are shipped with this workspace.
