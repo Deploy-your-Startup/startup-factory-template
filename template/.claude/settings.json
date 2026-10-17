@@ -1,0 +1,10 @@
+{
+  "extraKnownMarketplaces": {
+    "startup-factory-mod": {
+      "source": { "source": "github", "repo": "Deploy-your-Startup/startup-factory-mod" }
+    }
+  },
+  "enabledPlugins": {
+    "startup-factory@startup-factory-mod": true
+  }
+}
