@@ -12,7 +12,7 @@ Every behavior change needs integration tests; user flows need E2E tests of the
 real CLI and real Git repositories. Use GIVEN / WHEN / THEN. Do not mock our own
 code. Keep formatting separate from checking; do not introduce Git hooks.
 
-Run `mise run test`. Install the published Startup CLI v0.1.15 with its Copier
+Run `mise run test`. Install the published Startup CLI v0.1.17 with its Copier
 dependency first. Set `FACTORY_TEST_PYTHON` to that installation's Python when it
 is not the default `python3`. Set `STARTUP_TEST_EXECUTABLE` to its actual console
 entrypoint when a launcher depends on HOME. CI installs the pinned CLI directly.

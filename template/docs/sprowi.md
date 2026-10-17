@@ -180,13 +180,12 @@ scripts/sprowi.sh run example-app 002-bike-shop --engine codex --rounds 2 --publ
 ```
 
 `--model` overrides the engine's model for one run. The committed default is
-Haiku, which is the right default for cost but not for every task: the ideas in
-`ideas/` were written by Sonnet, and the same brief on Haiku will produce
-thinner ones. Reach for the bigger model when the task needs judgement rather
-than mechanics.
+Haiku, which is the right default for cost but not for every task: the same
+idea brief on Haiku produces thinner results than on Sonnet. Reach for the
+bigger model when the task needs judgement rather than mechanics.
 
 ```bash
-scripts/sprowi.sh run startup-factory 002-next-round --model claude-sonnet-5
+scripts/sprowi.sh run startup-factory 002-next-round --model claude-sonnet-5-5
 ```
 
 `task.md` is the only required document. `acceptance-tests.md` (GIVEN / WHEN /
@@ -208,7 +207,7 @@ assumption that could turn out false, or the same idea twice.
 ```bash
 scripts/sprowi.sh ideas                     # startups this portfolio does not have yet
 scripts/sprowi.sh ideas --for example-app        # ideas for one that exists
-scripts/sprowi.sh ideas --for example-app --publish --model claude-sonnet-5
+scripts/sprowi.sh ideas --for example-app --publish --model claude-sonnet-5-5
 ```
 
 The brief is generated rather than hand-written, so asking is one command. The

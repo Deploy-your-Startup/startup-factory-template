@@ -61,12 +61,7 @@ project's runtime. `mise tasks --all` lists tasks across the portfolio. Install
 lint separate: `make.sh format` writes, `make.sh lint` checks only. CI is the gate;
 do not add Git hooks. Run `mise run test` for the Factory's local checks.
 
-## Public launch and communication
-
-Read the live https://deploy-your-startup.com and its /get-started page before
-changing product-facing claims. Verify commands against implementation and pin
-published release references. Use neutral examples and current supported defaults.
-Keep maintainer procedures separate from onboarding.
+## Public launch
 
 Before a public launch, collect missing publication-approved operator name,
 postal address and contact details together. Never infer a private address.

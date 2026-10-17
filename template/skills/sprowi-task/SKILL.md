@@ -69,7 +69,7 @@ difference between a feature and an idea:
 ## Choosing engine and model
 
 - `--model` matters more than `--engine`. The default is Haiku, which is right
-  for mechanical work. Pass `--model claude-sonnet-5` when the task needs
+  for mechanical work. Pass `--model claude-sonnet-5-5` when the task needs
   judgement — anything open-ended, and every idea run.
 - `--engine codex` runs on the ChatGPT subscription rather than per-token
   billing, and reports no cost at all. Prefer it when the plan quota is the
