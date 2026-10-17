@@ -19,6 +19,13 @@ command applies a new Factory template release. Never run setup against an
 unreviewed registry. Verify `url`, `deployed` and `kubectl_context` against live
 state before adding them; keep one context with the right namespace per startup.
 
+Several startups can share one cluster. Each application repository records its
+cluster in `deployment/cluster.yml` (`owner`, `nodes`) and in
+`startup_cluster_owner` (`deployment/group_vars/all.yml`). Read these before
+checking pods, capacity or nodes: contexts of a shared cluster reach the same
+nodes, so query each startup in its own namespace and treat node load, outages
+and maintenance as affecting every attached startup.
+
 ## Creating and updating projects
 
 Use `startup bootstrap --output-dir projects/startups` from the workspace root.
