@@ -115,6 +115,10 @@ test("GIVEN the required tools but no kubectl WHEN init runs THEN setup complete
     assert.equal(result.status, 0, result.stdout + result.stderr);
     assert.match(result.stdout, /All tools available/);
     assert.match(result.stdout, /kubectl — optional, only to inspect a full-stack startup's cluster \(brew install kubectl\)/);
+    // A first setup without a coding agent or deployed projects reports no errors.
+    assert.match(result.stdout, /No coding agent found\. After installing one, run: startup skills install/);
+    assert.doesNotMatch(result.stdout + result.stderr, /Error:|failed/);
+    assert.doesNotMatch(result.stdout, /vault password/);
     assert.match(result.stdout, /Done! Projects are in/);
   } finally {
     rmSync(directory, { recursive: true, force: true });

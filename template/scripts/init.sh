@@ -92,9 +92,18 @@ registry_tooling="$("$script_dir/registry.sh" tooling)" || exit 1
 registry_deployed="$("$script_dir/registry.sh" deployed)" || exit 1
 
 # --- Phase 2: Install CLI and hub skills ---
-echo "Installing the CLI's deploy-your-startup skill..."
-if ! startup skills install; then
-  echo -e "${YELLOW}CLI skill installation failed. Resolve the error above and rerun startup skills install.${NC}"
+# A first-time setup may have no coding agent yet; that is not an error.
+has_agent=0
+for agent_dir in .claude .codex .config/opencode; do
+  [ -d "$HOME/$agent_dir" ] && has_agent=1
+done
+if [ "$has_agent" -eq 1 ]; then
+  echo "Installing the CLI's deploy-your-startup skill..."
+  if ! startup skills install; then
+    echo -e "${YELLOW}CLI skill installation failed. Resolve the error above and rerun startup skills install.${NC}"
+  fi
+else
+  echo "  - No coding agent found. After installing one, run: startup skills install"
 fi
 
 echo "Installing startup-factory skills..."
@@ -172,9 +181,7 @@ if [ "$failed" -gt 0 ]; then
 fi
 
 # --- Phase 4: Vault passwords ---
-echo "Checking vault passwords for deployed projects..."
-echo ""
-
+# Only deployed projects have vault passwords; a new Factory has none yet.
 vault_missing=0
 vault_present=0
 
@@ -192,21 +199,24 @@ check_vault_password() {
   fi
 }
 
-# Parse deployed projects
-while IFS= read -r name; do
-  [ -n "$name" ] || continue
-  check_vault_password "$name"
-done <<< "$registry_deployed"
-
-echo ""
-if [ "$vault_missing" -gt 0 ]; then
-  echo -e "${YELLOW}$vault_missing deployed project(s) missing vault password.${NC}"
+if [ -n "$registry_deployed" ]; then
+  echo "Checking vault passwords for deployed projects..."
   echo ""
-  "$script_dir/secrets.sh" store-all
-else
-  echo -e "${GREEN}All vault passwords present.${NC}"
+  while IFS= read -r name; do
+    [ -n "$name" ] || continue
+    check_vault_password "$name"
+  done <<< "$registry_deployed"
+
+  echo ""
+  if [ "$vault_missing" -gt 0 ]; then
+    echo -e "${YELLOW}$vault_missing deployed project(s) missing vault password.${NC}"
+    echo ""
+    "$script_dir/secrets.sh" store-all
+  else
+    echo -e "${GREEN}All vault passwords present.${NC}"
+  fi
+  echo ""
 fi
-echo ""
 
 # --- Phase 5: Sprowi (beta, opt-in) ---
 if [ "$with_sprowi" -eq 1 ]; then
