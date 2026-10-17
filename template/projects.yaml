@@ -20,3 +20,6 @@ tooling:
   - name: startup-factory-template
     repo: https://github.com/Deploy-your-Startup/startup-factory-template.git
     description: Reusable Factory workspace and agent loop
+  - name: startup-factory-mod
+    repo: https://github.com/Deploy-your-Startup/startup-factory-mod.git
+    description: Claude Code dashboard of this registry (/factory)

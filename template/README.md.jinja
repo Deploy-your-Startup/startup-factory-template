@@ -63,6 +63,10 @@ For full-stack deployments, `startup verify --working-directory
 projects/startups/example-app` checks the deployment. Follow AGENTS.md for legal
 onboarding and security checks before public launch.
 
+Claude Code offers to install the bundled
+[dashboard mod](https://github.com/Deploy-your-Startup/startup-factory-mod) when you
+trust this folder; `/factory` then shows each startup's website, pods and git state.
+
 Run `mise tasks --all` to discover project commands. Use `scripts/sync.sh` to pull
 the hub and registered repositories on another configured machine; it ends with
 `mise run registry:check`, which fails when `projects.yaml` and the checkouts

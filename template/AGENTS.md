@@ -41,6 +41,11 @@ Cloudflare Pages site, has `deployed` and `url` but no `kubectl_context`. `mise 
 every repository's tasks; run them with `mise -C <project> run <task>`. Run
 `mise run test` for the Factory's own checks.
 
+`.claude/settings.json` enables the public `startup-factory` Claude Code mod from
+[Deploy-your-Startup/startup-factory-mod](https://github.com/Deploy-your-Startup/startup-factory-mod):
+a `/factory` pane with website status, pod health and git state read from this
+registry. Accurate `url`, `deployed` and `kubectl_context` values keep it correct.
+
 ## Operating startups
 
 Use the `startup` CLI for Vault, Ansible, provisioning, deployment, sync and
