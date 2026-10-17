@@ -82,6 +82,45 @@ test("GIVEN missing tools WHEN running init THEN it stops before setup and offer
   }
 });
 
+test("GIVEN the required tools but no kubectl WHEN init runs THEN setup completes and reports kubectl as optional", () => {
+  const directory = mkdtempSync(join(tmpdir(), "factory-init-no-kubectl-"));
+  try {
+    const root = new URL("../../", import.meta.url);
+    const scripts = join(directory, "scripts");
+    const binaries = join(directory, "bin");
+    mkdirSync(scripts);
+    mkdirSync(binaries);
+    for (const name of ["init.sh", "registry.sh"]) {
+      copyFileSync(new URL(`scripts/${name}`, root), join(scripts, name));
+    }
+    writeFileSync(join(directory, "projects.yaml"), "projects: []\ntooling: []\n");
+    const quote = (value) => "'" + value.replaceAll("'", "'\\''") + "'";
+    // No shell profile, so init cannot pick up a kubectl from Homebrew paths.
+    for (const name of ["startup", "yq", "dirname", "head"]) {
+      const found = spawnSync("which", [name === "startup" ? (process.env.STARTUP_TEST_EXECUTABLE || (existsSync(join(homedir(), ".local/share/startup/commands/startup")) ? join(homedir(), ".local/share/startup/commands/startup") : name)) : name], { encoding: "utf8" });
+      assert.equal(found.status, 0, `${name} is required for this integration test`);
+      writeFileSync(join(binaries, name), `#!/bin/bash\nexec ${quote(found.stdout.trim())} "$@"\n`, { mode: 0o755 });
+    }
+    for (const name of ["uv", "gh", "git", "mise"]) {
+      writeFileSync(join(binaries, name), '#!/bin/bash\n[ "$1" = --version ] || exit 90\necho test-boundary\n', { mode: 0o755 });
+    }
+    // WHEN the real init script runs without kubectl on PATH.
+    const result = spawnSync("/bin/bash", [join(scripts, "init.sh")], {
+      cwd: directory,
+      env: { ...process.env, HOME: directory, PATH: binaries },
+      encoding: "utf8",
+      timeout: 30000,
+    });
+    // THEN setup completes and kubectl is offered as an optional tool.
+    assert.equal(result.status, 0, result.stdout + result.stderr);
+    assert.match(result.stdout, /All tools available/);
+    assert.match(result.stdout, /kubectl — optional, only to inspect a full-stack startup's cluster \(brew install kubectl\)/);
+    assert.match(result.stdout, /Done! Projects are in/);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("GIVEN local deployment experiments WHEN Git considers generated files THEN credentials and scratch checkouts stay untracked", () => {
   const root = new URL("../../", import.meta.url);
   const paths = [

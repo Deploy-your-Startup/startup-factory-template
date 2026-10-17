@@ -42,7 +42,7 @@ echo ""
 echo "Checking required tools..."
 missing=0
 
-for tool in kubectl startup uv gh git yq mise; do
+for tool in startup uv gh git yq mise; do
   if command -v "$tool" &>/dev/null; then
     version=$("$tool" --version 2>/dev/null | head -1 || echo "installed")
     echo -e "  ${GREEN}✓${NC} $tool ($version)"
@@ -51,6 +51,14 @@ for tool in kubectl startup uv gh git yq mise; do
     missing=$((missing + 1))
   fi
 done
+
+# Optional: only needed to inspect a startup's Kubernetes cluster yourself.
+# Bootstrap, deployment and landing pages work without it.
+if command -v kubectl &>/dev/null; then
+  echo -e "  ${GREEN}✓${NC} kubectl ($(kubectl version --client 2>/dev/null | head -1)) — optional"
+else
+  echo "  - kubectl — optional, only to inspect a full-stack startup's cluster (brew install kubectl)"
+fi
 
 # Optional: only projects in private network mode need it, and the startup CLI
 # says so itself when one does.
@@ -66,7 +74,6 @@ if [ "$missing" -gt 0 ]; then
   echo -e "${RED}$missing required tool(s) missing. Please install them before continuing.${NC}"
   echo ""
   echo "Install hints:"
-  echo "  kubectl:  brew install kubectl"
   echo "  startup:  uv tool install --python 3.14 'git+https://github.com/Deploy-your-Startup/cli.git@v0.1.17'"
   echo "  uv:       curl -LsSf https://astral.sh/uv/install.sh | sh"
   echo "  gh:       brew install gh"
