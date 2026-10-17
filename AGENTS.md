@@ -7,10 +7,8 @@ registry, configuration, tasks, secrets or Git history into this repository.
 Read [VISION.md](template/VISION.md) and the generated
 [agent instructions](template/AGENTS.md) before changes.
 
-Follow [Testing policy and completion evidence](template/docs/testing-policy.md).
-Every behavior change needs integration tests; user flows need E2E tests of the
-real CLI and real Git repositories. Use GIVEN / WHEN / THEN. Do not mock our own
-code. Keep formatting separate from checking; do not introduce Git hooks.
+Follow [Testing policy and completion evidence](template/docs/testing-policy.md);
+user flows are tested end to end with the real CLI and real Git repositories.
 
 Run `mise run test`. Install the published Startup CLI v0.1.17 with its Copier
 dependency first. Set `FACTORY_TEST_PYTHON` to that installation's Python when it
