@@ -1,89 +1,68 @@
 # Factory agent instructions
 
-Help the owner build, ship and validate ideas using this workspace. Read
-[VISION.md](VISION.md): share reusable knowledge and invite contributions to the
-shared tooling. Never publish personal startup lists, domains, production
-contexts, tasks, credentials or private machine configuration as template data.
+Help the owner build, ship and validate ideas using this workspace. It holds the
+registry, scripts and optional Sprowi configuration; application code lives in
+the repositories under `projects/`. Read [VISION.md](VISION.md): share reusable
+knowledge, invite contributions, and never publish personal startup lists,
+domains, production contexts, tasks, credentials or machine settings as
+template data.
 
-## Registry and ownership
+## Where the rules live
 
-`projects.yaml` records this owner's startups and the public tooling repositories.
-Application repositories live under `projects/startups/<name>/`; tooling lives
-under `projects/tooling/<name>/`. Read each repository's AGENTS.md before changes.
-Keep the tooling list available so everyone can inspect, fork and contribute.
-Do not assume write access to upstream repositories. Follow CONTRIBUTING.md.
+| Topic | Source |
+|---|---|
+| Tests and completion claims | [Testing policy and completion evidence](docs/testing-policy.md) |
+| Deploying, secrets, shared clusters, legal onboarding | the `deploy-your-startup` skill (`startup skills install`) |
+| A project's services, commands and ADRs | its own `AGENTS.md` under `projects/startups/<name>/` or `projects/tooling/<name>/` |
+| Contributing to the shared tooling | [CONTRIBUTING.md](CONTRIBUTING.md) |
+| Sprowi, the optional agent loop | [docs/sprowi.md](docs/sprowi.md) |
 
-Use `scripts/registry.sh` to read the registry. Run `scripts/init.sh` to clone
-registered repositories, and `scripts/sync.sh` to pull existing checkouts. Neither
-command applies a new Factory template release. Never run setup against an
-unreviewed registry. Verify `url`, `deployed` and `kubectl_context` against live
-state before adding them; keep one context with the right namespace per startup.
+Do not restate those rules here. When one is wrong or missing, improve it at its
+source and contribute it back.
 
-Several startups can share one cluster. Each application repository records its
-cluster in `deployment/cluster.yml` (`owner`, `nodes`) and in
-`startup_cluster_owner` (`deployment/group_vars/all.yml`). Read these before
-checking pods, capacity or nodes: contexts of a shared cluster reach the same
-nodes, so query each startup in its own namespace and treat node load, outages
-and maintenance as affecting every attached startup.
+## Registry
 
-## Creating and updating projects
+`projects.yaml` records this owner's startups and the public tooling
+repositories. Read it with `scripts/registry.sh`; never run setup against an
+unreviewed registry. Set `deployed`, `url` and `kubectl_context` only after
+verifying Actions, DNS, HTTPS and cluster access, with one context and the right
+namespace per startup. Keep the tooling list so everyone can inspect, fork and
+contribute; do not assume upstream write access.
 
-Use `startup bootstrap --output-dir projects/startups` from the workspace root.
-Provisioning incurs provider costs; agree on the project and budget first. After
-creation (including partial bootstrap), record the actual Git remote in the
-registry. Verify GitHub Actions, DNS and HTTPS before claiming deployment success.
-Do not remove an interrupted project: bootstrap supports resuming it.
+`scripts/init.sh` clones registered repositories and `scripts/sync.sh` pulls
+existing checkouts; neither applies a Factory release. `mise tasks --all` lists
+every repository's tasks; run them with `mise -C <project> run <task>`. Run
+`mise run test` for the Factory's own checks.
 
-Use `startup` for deployment, Ansible and Vault operations. Install its bundled
-skill with `startup skills install`. Never use raw Ansible or manually edit
-`deployment/.shared-roles`. Secret input uses stdin and the macOS Keychain; never
-put credentials in process arguments, logs or tracked files. Preview secret
-changes with `--dry-run`; obtain confirmation before destructive actions,
-credential rotation, force-pushing or infrastructure removal.
+## Operating startups
 
-Factory and application updates use `startup template update --version <release>
---dry-run` in the relevant clean repository, followed by the actual update, diff
-review, conflict resolution and tests. Commit `.copier-answers.yml`. Owner registry
-and Sprowi configuration are seeded once and preserved by Factory updates. Review
-new defaults manually when releases change those files.
+Use the `startup` CLI for Vault, Ansible, provisioning, deployment, sync and
+template updates; never run Ansible directly or edit `deployment/.shared-roles`.
 
-`startup sync` separately updates shared deployment roles/workflows in the owner's
-account. Preview first and select a reviewed source release. Existing application
-role pins do not advance automatically. Verify fresh database, media and cluster
-backups plus a provider recovery snapshot before any VM, OS or cluster upgrade.
-Never reopen Kubernetes API access to work around a client connection problem.
+- New startups: agree on the project and budget first, then run
+  `startup bootstrap --output-dir projects/startups` and register the actual Git
+  remote, also after a partial bootstrap. Do not delete an interrupted project;
+  bootstrap resumes it.
+- Updates: `startup template update --version <release> --dry-run` in a clean
+  repository, then apply, review, test and commit `.copier-answers.yml`. Factory
+  updates preserve the registry and Sprowi configuration. `startup sync` updates
+  shared deployment roles separately and does not advance existing role pins.
+- Shared clusters: each application records its cluster in
+  `deployment/cluster.yml` (`owner`, `nodes`) and `startup_cluster_owner`
+  (`deployment/group_vars/all.yml`). Read them before checking pods, capacity or
+  nodes; query each startup in its own namespace and treat node load, outages and
+  maintenance as affecting every attached startup.
 
-## Tests and local runtimes
+## Guardrails
 
-Follow [Testing policy and completion evidence](docs/testing-policy.md).
-Every behavior change needs integration tests of the real command, repository or
-application; changed user flows also need E2E tests. Use explicit GIVEN / WHEN /
-THEN. Replace only external boundaries, never our own code. Unit tests supplement
-these checks only for complex algorithms. Report failures, skipped checks and
-uncovered flows honestly; green checks do not prove a live deployment.
-
-Use `mise -C <project> run <task>` or `mise -C <project> exec -- ...` for the
-project's runtime. `mise tasks --all` lists tasks across the portfolio. Install
-`uv` globally; Python services own their `.python-version`. Keep formatting and
-lint separate: `make.sh format` writes, `make.sh lint` checks only. CI is the gate;
-do not add Git hooks. Run `mise run test` for the Factory's local checks.
-
-## Public launch
-
-Before a public launch, collect missing publication-approved operator name,
-postal address and contact details together. Never infer a private address.
-Prepare disclosures matching actual hosting, login, analytics and processing;
-generic legal text is a draft. Keep optional analytics disabled until disclosures
-are reviewed. Use supported site-policy configuration and local consent controls;
-no extra consent-service account is required. Test rejection, acceptance and
-withdrawal as well as anonymous/other-account access, CSRF, throttling and quotas.
-Record legal or security gaps and do not claim launch readiness while they remain.
-
-## Optional Sprowi
-
-Sprowi is opt-in: `scripts/init.sh --with-sprowi`. Its configuration, tasks and
-experiments belong to this owner. The stable `startup-factory` target refers to
-this hub regardless of its directory name. See docs/sprowi.md for budgets, sandbox
-boundaries and publishing. Never run an engine or publish without authorization.
-
-No personal plugin or agent settings are shipped with this workspace.
+- Ask before destructive operations: deleting resources, rotating secrets,
+  force-pushing, restores, VM or cluster changes. Sprowi runs and publishing
+  also need the owner's authorization.
+- Before any VM, OS or cluster upgrade, verify fresh database, media and cluster
+  backups plus a provider recovery snapshot. Never reopen Kubernetes API access
+  to work around a client problem.
+- Secrets go through stdin and the Keychain; never put them in process
+  arguments, logs or tracked files.
+- Never infer an operator's private address or call a startup ready for public
+  launch while legal or security gaps remain.
+- Report what you verified; local checks do not prove a production deployment.
