@@ -8,8 +8,7 @@
     "scripts/**",
     "projects/**",
     "projects.yaml",
-    "AGENTS.md",
-    "CLAUDE.md"
+    "AGENTS.md"
   ],
   "setupCommands": {},
   "acceptanceCommands": {

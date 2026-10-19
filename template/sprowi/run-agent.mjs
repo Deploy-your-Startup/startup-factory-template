@@ -80,7 +80,7 @@ function implementPrompt() {
       : "";
   return `Implement the requested change in ${workspace}.
 
-Read the repository's own AGENTS.md or CLAUDE.md first if it has one: it wins
+Read the repository's own AGENTS.md first if it has one: it wins
 over habits from other repositories.
 
 ${boundaries} Leave all changes in the working tree; do not commit them.

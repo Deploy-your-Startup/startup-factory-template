@@ -18,7 +18,9 @@ template data.
 | Sprowi, the optional agent loop | [docs/sprowi.md](docs/sprowi.md) |
 
 Do not restate those rules here. When one is wrong or missing, improve it at its
-source and contribute it back.
+source and contribute it back. After each launch, turn recurring issues into
+concise rules and integration or E2E checks in the owning CLI, shared workflow or
+template; update existing guidance instead of writing launch reports.
 
 ## Registry
 
