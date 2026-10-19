@@ -66,6 +66,8 @@ difference between a feature and an idea:
 - Without it, only the project's checks decide, and the reviewer judges scope
   and the project's own rules.
 
+The scenarios draft the tests; they are not a spec to keep in sync afterwards.
+
 ## Choosing engine and model
 
 - `--model` matters more than `--engine`. The default is Haiku, which is right
