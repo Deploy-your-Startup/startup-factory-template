@@ -192,6 +192,10 @@ scripts/sprowi.sh run startup-factory 002-next-round --model claude-sonnet-5-5
 THEN scenarios) and `loop.md` (guidance for this one task) are optional, which
 is what makes the same loop usable for a sharp feature and for a vague idea.
 
+The scenarios are a draft of the tests, not a specification to maintain: once
+the tests cover them, the tests are the specification (see the
+[testing policy](testing-policy.md)).
+
 The target project must have a clean working tree: the patch is taken against
 its `HEAD`, and refusing a dirty tree is what keeps your own work out of it.
 
