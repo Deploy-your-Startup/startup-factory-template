@@ -34,6 +34,8 @@ a skipped provider scenario is unverified, not a pass. State remaining gaps when
 reporting completion. Local checks alone do not prove a production deployment.
 
 Preserve E2E as a deployment gate where the project deploys an application.
+Run browser E2E in pull request CI; local runs and backend coverage do not
+replace it.
 Every enabled shard must succeed before publishing or deployment. Use isolated
 data for each shard, retain reports and failure logs, and clean up disposable
 resources. Improve speed through caching and independent parallel checks rather

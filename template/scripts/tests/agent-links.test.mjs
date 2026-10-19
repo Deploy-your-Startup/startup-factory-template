@@ -1,13 +1,15 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, readdirSync, readFileSync } from "node:fs";
-import { dirname, join, relative } from "node:path";
+import { execFileSync } from "node:child_process";
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 // Agent instructions stay short by linking to the documents that hold the
 // details. These checks keep the links working and assert no wording.
 const root = fileURLToPath(new URL("../../", import.meta.url));
-// Registered repositories are separate checkouts with their own checks.
+// Markdown inside registered repositories is checked by those repositories.
 const skipped = new Set([".git", "node_modules", "projects", ".venv", "experiments"]);
 
 function markdown(directory) {
@@ -17,6 +19,34 @@ function markdown(directory) {
     if (entry.isDirectory()) return markdown(path);
     return entry.name.endsWith(".md") ? [path] : [];
   });
+}
+
+// A link into a registered repository must resolve in its checkout or, when it
+// is not cloned (as in CI), in the repository's default branch.
+function registered(kind, name) {
+  const command = kind === "startups" ? "startups" : "tooling";
+  const records = execFileSync(join(root, "scripts/registry.sh"), [command], { encoding: "utf8" });
+  return records.split("\n").map((line) => line.split("\t")).find(([entry]) => entry === name)?.[1];
+}
+
+function existsInRegistered(resolved) {
+  const [kind, name, ...rest] = relative(join(root, "projects"), resolved).split(sep);
+  const checkout = join(root, "projects", kind, name ?? "");
+  if (existsSync(checkout)) return existsSync(resolved);
+  const repo = name && registered(kind, name);
+  if (!repo) return false;
+  const url = repo.replace(/^git@github\.com:/, "https://github.com/");
+  const clone = mkdtempSync(join(tmpdir(), "factory-link-"));
+  try {
+    execFileSync("git", ["clone", "--quiet", "--depth=1", "--filter=blob:none", "--no-checkout", url, clone], { stdio: "ignore" });
+    const path = rest.filter(Boolean).join("/");
+    execFileSync("git", ["-C", clone, "cat-file", "-e", `HEAD:${path}`], { stdio: "ignore" });
+    return true;
+  } catch {
+    return false;
+  } finally {
+    rmSync(clone, { recursive: true, force: true });
+  }
 }
 
 function targets(text) {
@@ -33,8 +63,10 @@ test("GIVEN the workspace's Markdown WHEN following relative links THEN every ta
       const path = target.split("#")[0];
       if (!path || /^[a-z][a-z0-9+.-]*:/i.test(target)) continue;
       const resolved = join(dirname(document), path);
-      if (resolved.startsWith(join(root, "projects/"))) continue;
-      if (!existsSync(resolved)) broken.push(`${relative(root, document)} → ${target}`);
+      const exists = resolved.startsWith(join(root, "projects/"))
+        ? existsInRegistered(resolved)
+        : existsSync(resolved);
+      if (!exists) broken.push(`${relative(root, document)} → ${target}`);
     }
   }
   assert.deepEqual(broken, []);

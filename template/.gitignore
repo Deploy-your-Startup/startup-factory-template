@@ -5,7 +5,6 @@
 .codex/
 .opencode/
 .DS_Store
-.rtk/
 .worktrees/
 dry-run-output/
 /experiments/

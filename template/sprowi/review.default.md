@@ -12,7 +12,7 @@ nothing.
 
 ## The project's own rules
 
-Read the repository's `AGENTS.md` or `CLAUDE.md` first. It wins over habits
+Read the repository's `AGENTS.md` first. It wins over habits
 from other repositories.
 
 Then follow the chain: if it lists architecture decision records, conventions
