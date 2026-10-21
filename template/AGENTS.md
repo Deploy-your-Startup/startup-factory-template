@@ -32,7 +32,8 @@ namespace per startup. Keep the tooling list so everyone can inspect, fork and
 contribute; do not assume upstream write access.
 
 `scripts/init.sh` clones registered repositories and `scripts/sync.sh` pulls
-existing checkouts; neither applies a Factory release. `mise run registry:check`
+existing checkouts, pointing origin at a moved repository's registered URL when
+it shares history; neither applies a Factory release. `mise run registry:check`
 (also run by `sync.sh`) fails on drift: unregistered or missing checkouts, a
 different origin, or a `url`/`kubectl_context` without `deployed: true`. Resolve
 each by registering, cloning or removing; a startup without a cluster, such as a

@@ -23,9 +23,27 @@ already_current=0
 skipped_missing=0
 failed=0
 
+# A repository moved to another owner or name keeps its history. Point origin at
+# the registered URL when that URL shares history with the checkout; otherwise
+# leave origin alone so the registry check reports the mismatch.
+follow_registered_origin() {
+  local name="$1" target_dir="$2" repo="$3" branch="$4" origin
+  origin=$(git -C "$target_dir" remote get-url origin 2>/dev/null) || return 0
+  "$script_dir/registry.sh" same-repo "$origin" "$repo" && return 0
+
+  if git -C "$target_dir" fetch --quiet "$repo" "$branch" 2>/dev/null &&
+     git -C "$target_dir" merge-base HEAD FETCH_HEAD >/dev/null 2>&1; then
+    git -C "$target_dir" remote set-url origin "$repo"
+    echo -e "  ${CYAN}→${NC} $name — origin moved: $origin → $repo"
+  else
+    echo -e "  ${YELLOW}⊘${NC} $name — registered $repo shares no history with origin, keeping $origin"
+  fi
+}
+
 pull_repo() {
   local name="$1"
   local target_dir="$2"
+  local repo="$3"
 
   if [ ! -d "$target_dir" ]; then
     echo -e "  ${YELLOW}⊘${NC} $name — directory missing, run init.sh to clone"
@@ -39,6 +57,8 @@ pull_repo() {
     echo -e "  ${YELLOW}⊘${NC} $name — detached HEAD, skipping"
     return
   fi
+
+  follow_registered_origin "$name" "$target_dir" "$repo" "$branch"
 
   local dirty=""
   if ! git -C "$target_dir" diff --quiet 2>/dev/null || \
@@ -97,16 +117,16 @@ registry_startups="$("$script_dir/registry.sh" startups)" || exit 1
 registry_tooling="$("$script_dir/registry.sh" tooling)" || exit 1
 
 echo "Startups:"
-while IFS=$'\t' read -r name _repo _deployed _ctx; do
+while IFS=$'\t' read -r name repo _deployed _ctx; do
   [ -n "$name" ] || continue
-  pull_repo "$name" "$root_dir/projects/startups/$name"
+  pull_repo "$name" "$root_dir/projects/startups/$name" "$repo"
 done <<< "$registry_startups"
 
 echo ""
 echo "Tooling:"
-while IFS=$'\t' read -r name _repo; do
+while IFS=$'\t' read -r name repo; do
   [ -n "$name" ] || continue
-  pull_repo "$name" "$root_dir/projects/tooling/$name"
+  pull_repo "$name" "$root_dir/projects/tooling/$name" "$repo"
 done <<< "$registry_tooling"
 
 # Summary
