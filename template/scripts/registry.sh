@@ -16,6 +16,7 @@ set -euo pipefail
 #   deployed          name        (startups with `deployed: true`)
 #   check             compare the registry with the checkouts under projects/;
 #                     prints each drift and exits 1 if there is any
+#   same-repo A B     exit 0 when two remote URLs name the same repository
 
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 root_dir="$(dirname "$script_dir")"
@@ -95,8 +96,12 @@ case "${1:-}" in
   check)
     check_registry
     ;;
+  same-repo)
+    [ "$#" -eq 3 ] || { printf 'Usage: %s same-repo <url> <url>\n' "$(basename "$0")" >&2; exit 2; }
+    [ "$(normalize_repo "$2")" = "$(normalize_repo "$3")" ]
+    ;;
   *)
-    printf 'Usage: %s {startups|tooling|deployed|check}\n' "$(basename "$0")" >&2
+    printf 'Usage: %s {startups|tooling|deployed|check|same-repo}\n' "$(basename "$0")" >&2
     exit 1
     ;;
 esac
