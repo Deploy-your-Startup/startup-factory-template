@@ -117,6 +117,12 @@ echo -e "  ${CYAN}Already current:${NC} $already_current"
 [ "$skipped_missing" -gt 0 ] && echo -e "  ${YELLOW}Missing (→ run init.sh):${NC} $skipped_missing"
 [ "$failed" -gt 0 ] && echo -e "  ${RED}Failed:${NC}          $failed"
 echo ""
-if [ "$failed" -gt 0 ]; then
+
+# Pulling cannot notice unregistered or mismatched checkouts; report them here.
+echo "Registry:"
+drift=0
+"$script_dir/registry.sh" check || drift=1
+echo ""
+if [ "$failed" -gt 0 ] || [ "$drift" -gt 0 ]; then
   exit 1
 fi

@@ -32,7 +32,11 @@ namespace per startup. Keep the tooling list so everyone can inspect, fork and
 contribute; do not assume upstream write access.
 
 `scripts/init.sh` clones registered repositories and `scripts/sync.sh` pulls
-existing checkouts; neither applies a Factory release. `mise tasks --all` lists
+existing checkouts; neither applies a Factory release. `mise run registry:check`
+(also run by `sync.sh`) fails on drift: unregistered or missing checkouts, a
+different origin, or a `url`/`kubectl_context` without `deployed: true`. Resolve
+each by registering, cloning or removing; a startup without a cluster, such as a
+Cloudflare Pages site, has `deployed` and `url` but no `kubectl_context`. `mise tasks --all` lists
 every repository's tasks; run them with `mise -C <project> run <task>`. Run
 `mise run test` for the Factory's own checks.
 

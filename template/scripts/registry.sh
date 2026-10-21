@@ -14,6 +14,8 @@ set -euo pipefail
 #   startups          name <TAB> repo <TAB> deployed <TAB> kubectl_context
 #   tooling           name <TAB> repo
 #   deployed          name        (startups with `deployed: true`)
+#   check             compare the registry with the checkouts under projects/;
+#                     prints each drift and exits 1 if there is any
 
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 root_dir="$(dirname "$script_dir")"
@@ -29,6 +31,57 @@ if [ ! -f "$projects_yaml" ]; then
   exit 1
 fi
 
+# Compare repository URLs by host and path, so SSH and HTTPS remotes of the
+# same repository match.
+normalize_repo() {
+  printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | sed -E \
+    -e 's#^[a-z+]+://##' -e 's#^[^@/]+@##' -e 's#:#/#' -e 's#/+$##' -e 's#\.git$##'
+}
+
+check_registry() {
+  local drift=0 section kind name repo entries dir origin
+  report() { printf '  ✗ %s\n' "$1"; drift=$((drift + 1)); }
+
+  # A deployment record must be complete: no url or context without deployed.
+  while IFS=$'\t' read -r name problem; do
+    if [ -n "$name" ]; then report "$name — $problem"; fi
+  done < <(yq '
+      [.projects[] | select((.deployed == true) and ((.url // "") == "")) | [.name, "deployed: true without url"]] +
+      [.projects[] | select((.deployed != true) and ((.url // "") != "")) | [.name, "url without deployed: true"]] +
+      [.projects[] | select((.deployed != true) and ((.kubectl_context // "") != "")) | [.name, "kubectl_context without deployed: true"]] |
+      .[] | @tsv' "$projects_yaml")
+
+  for section in projects:startups tooling:tooling; do
+    kind="${section#*:}"
+    entries="$(yq ".${section%%:*}[] | [.name, .repo] | @tsv" "$projects_yaml")"
+    while IFS=$'\t' read -r name repo; do
+      [ -n "$name" ] || continue
+      dir="$root_dir/projects/$kind/$name"
+      if [ ! -d "$dir" ]; then
+        report "projects/$kind/$name — registered but not cloned (run scripts/init.sh)"
+      elif ! origin="$(git -C "$dir" remote get-url origin 2>/dev/null)"; then
+        report "projects/$kind/$name — no Git origin"
+      elif [ "$(normalize_repo "$origin")" != "$(normalize_repo "$repo")" ]; then
+        report "projects/$kind/$name — origin $origin differs from registered $repo"
+      fi
+    done <<< "$entries"
+
+    [ -d "$root_dir/projects/$kind" ] || continue
+    for dir in "$root_dir/projects/$kind"/*/; do
+      [ -d "$dir" ] || continue
+      name="$(basename "$dir")"
+      grep -Fxq -- "$name" <<< "$(cut -f1 <<< "$entries")" ||
+        report "projects/$kind/$name — checkout not in projects.yaml (register or remove it)"
+    done
+  done
+
+  if [ "$drift" -gt 0 ]; then
+    printf '%d registry drift(s) found.\n' "$drift"
+    return 1
+  fi
+  printf 'Registry matches the checkouts.\n'
+}
+
 case "${1:-}" in
   startups)
     yq '.projects[] | [.name, .repo, (.deployed // false), (.kubectl_context // "")] | @tsv' "$projects_yaml"
@@ -39,8 +92,11 @@ case "${1:-}" in
   deployed)
     yq '.projects[] | select(.deployed == true) | .name' "$projects_yaml"
     ;;
+  check)
+    check_registry
+    ;;
   *)
-    printf 'Usage: %s {startups|tooling|deployed}\n' "$(basename "$0")" >&2
+    printf 'Usage: %s {startups|tooling|deployed|check}\n' "$(basename "$0")" >&2
     exit 1
     ;;
 esac
