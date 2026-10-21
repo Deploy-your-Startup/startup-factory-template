@@ -14,6 +14,10 @@ config_roots = [
 ]
 lockfile = false
 
+[tasks."registry:check"]
+description = "Report drift between projects.yaml and the checkouts under projects/"
+run = "scripts/registry.sh check"
+
 [tasks.test]
 description = "Check the Factory scripts and Sprowi workflows locally"
 run = "node --test scripts/tests/*.test.mjs sprowi/*.integration.test.mjs"
