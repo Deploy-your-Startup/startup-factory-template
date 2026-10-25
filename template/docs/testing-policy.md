@@ -56,8 +56,8 @@ reporting completion. Local checks alone do not prove a production deployment.
 
 Preserve E2E verification before approving application deployments, using the
 selected local or CI mode above.
-Run browser E2E in pull request CI; local runs and backend coverage do not
-replace it.
+Run browser E2E before approving user-flow changes, using the selected local
+or CI mode. Backend coverage alone does not replace browser verification.
 Every enabled shard must succeed before publishing or deployment. Use isolated
 data for each shard, retain reports and failure logs, and clean up disposable
 resources. Improve speed through caching and independent parallel checks rather
