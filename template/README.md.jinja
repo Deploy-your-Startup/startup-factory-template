@@ -86,9 +86,20 @@ Review the diff, resolve conflicts, run `mise run test` and commit the update wi
 Review release notes for optional changes to those owner-managed files; new
 registry entries and Sprowi defaults are not applied automatically.
 
-Application repositories have their own template updates. `startup sync` handles
-shared deployment roles/workflows separately. Pulling this workspace with Git
-does not apply upstream Factory template changes.
+Update all registered startups from this workspace:
+
+```bash
+./scripts/update-templates.sh          # preview
+./scripts/update-templates.sh --apply  # apply locally
+```
+
+Each startup's Copier metadata selects its template; the script uses its latest
+HEAD. Missing checkouts, repositories without Copier metadata and uncommitted
+changes are skipped. Review the diffs, resolve conflicts, run project checks and
+commit each update. The script does not pull, commit, push or deploy.
+
+`startup sync` handles shared deployment roles/workflows separately. Pulling this
+workspace with Git does not apply upstream Factory template changes.
 
 ## Optional agent loop
 
