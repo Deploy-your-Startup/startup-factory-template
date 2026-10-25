@@ -35,7 +35,9 @@ ensure_store_env() {
     printf 'error: `security` (macOS Keychain tool) not found on PATH.\n' >&2
     exit 1
   fi
-  if [ ! -r /dev/tty ]; then
+  # Open the terminal instead of testing -r: without a controlling terminal
+  # /dev/tty is still readable but cannot be opened.
+  if ! { : </dev/tty; } 2>/dev/null; then
     printf 'error: writing secrets requires an interactive terminal (no /dev/tty available).\n' >&2
     exit 1
   fi
