@@ -129,3 +129,77 @@ test("GIVEN an up-to-date hub with an unregistered checkout WHEN syncing THEN sy
     assert.match(result.stdout, /startups\/stray — checkout not in projects\.yaml/);
   } finally { rmSync(directory, { recursive: true, force: true }); }
 });
+
+function hubWithProject(directory, registeredRepo) {
+  const hubOrigin = join(directory, "hub.git");
+  const seed = join(directory, "seed");
+  run("git", ["init", "-q", "--bare", "-b", "main", hubOrigin], directory);
+  mkdirSync(seed);
+  cpSync(new URL("scripts", source), join(seed, "scripts"), { recursive: true });
+  writeFileSync(join(seed, "projects.yaml"), `projects:\n  - name: site\n    repo: ${registeredRepo}\ntooling: []\n`);
+  writeFileSync(join(seed, ".gitignore"), "projects/\n");
+  git(seed, "init", "-q", "-b", "main");
+  git(seed, "add", "-A");
+  git(seed, "commit", "-q", "-m", "hub");
+  git(seed, "push", "-q", hubOrigin, "main");
+  const hub = join(directory, "hub");
+  run("git", ["clone", "-q", hubOrigin, hub], directory);
+  return hub;
+}
+
+function repository(directory, name, message) {
+  const bare = join(directory, `${name}.git`);
+  const work = join(directory, `${name}-work`);
+  run("git", ["init", "-q", "--bare", "-b", "main", bare], directory);
+  mkdirSync(work);
+  git(work, "init", "-q", "-b", "main");
+  git(work, "commit", "-q", "--allow-empty", "-m", message);
+  git(work, "push", "-q", bare, "main");
+  return { bare, work };
+}
+
+function sync(hub) {
+  return spawnSync("bash", [join(hub, "scripts/sync.sh")], { cwd: hub, env, encoding: "utf8", timeout: 30000 });
+}
+
+function originOf(directory) {
+  return spawnSync("git", ["remote", "get-url", "origin"], { cwd: directory, env, encoding: "utf8" }).stdout.trim();
+}
+
+test("GIVEN a repository moved to a new owner in the registry WHEN syncing THEN origin follows the registry and the new commits are pulled", () => {
+  const directory = mkdtempSync(join(tmpdir(), "factory-sync-moved-"));
+  try {
+    const old = repository(directory, "old-owner", "initial");
+    const moved = join(directory, "new-owner.git");
+    run("git", ["clone", "-q", "--bare", old.bare, moved], directory);
+    git(old.work, "commit", "-q", "--allow-empty", "-m", "after the move");
+    git(old.work, "push", "-q", moved, "main");
+    const hub = hubWithProject(directory, moved);
+    run("git", ["clone", "-q", old.bare, join(hub, "projects/startups/site")], directory);
+
+    const result = sync(hub);
+
+    assert.equal(result.status, 0, result.stdout + result.stderr);
+    assert.match(result.stdout, /site — origin moved: .*old-owner\.git → .*new-owner\.git/);
+    assert.match(result.stdout, /site \(main\) — pulling\.\.\. .*updated/);
+    assert.match(result.stdout, /Registry matches the checkouts/);
+    assert.equal(originOf(join(hub, "projects/startups/site")), moved);
+  } finally { rmSync(directory, { recursive: true, force: true }); }
+});
+
+test("GIVEN a registered repository without shared history WHEN syncing THEN origin is kept and the drift is reported", () => {
+  const directory = mkdtempSync(join(tmpdir(), "factory-sync-unrelated-"));
+  try {
+    const current = repository(directory, "current", "current history");
+    const unrelated = repository(directory, "unrelated", "unrelated history");
+    const hub = hubWithProject(directory, unrelated.bare);
+    run("git", ["clone", "-q", current.bare, join(hub, "projects/startups/site")], directory);
+
+    const result = sync(hub);
+
+    assert.equal(result.status, 1, result.stdout + result.stderr);
+    assert.match(result.stdout, /site — registered .*unrelated\.git shares no history with origin, keeping .*current\.git/);
+    assert.match(result.stdout, /startups\/site — origin .*current\.git differs from registered/);
+    assert.equal(originOf(join(hub, "projects/startups/site")), current.bare);
+  } finally { rmSync(directory, { recursive: true, force: true }); }
+});
