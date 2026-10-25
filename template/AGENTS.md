@@ -37,6 +37,9 @@ verifying Actions, DNS, HTTPS and cluster access, with one context and the right
 namespace per startup. Keep the tooling list so everyone can inspect, fork and
 contribute; do not assume upstream write access.
 
+Start every session with `scripts/sync.sh` before reading guidance or acting;
+worktrees branch from local `main`, which may be stale.
+
 `scripts/init.sh` clones registered repositories and `scripts/sync.sh` pulls
 existing checkouts, pointing origin at a moved repository's registered URL when
 it shares history; neither applies a Factory release. `mise run registry:check`
