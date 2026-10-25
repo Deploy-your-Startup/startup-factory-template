@@ -65,6 +65,8 @@ template updates; never run Ansible directly or edit `deployment/.shared-roles`.
   repository, then apply, review, test and commit `.copier-answers.yml`. Factory
   updates preserve the registry and Sprowi configuration. `startup sync` updates
   shared deployment roles separately and does not advance existing role pins.
+  For all registered startups, preview with `scripts/update-templates.sh`, then
+  apply locally with `scripts/update-templates.sh --apply`.
 - Shared clusters: each application records its cluster in
   `deployment/cluster.yml` (`owner`, `nodes`) and `startup_cluster_owner`
   (`deployment/group_vars/all.yml`). Read them before checking pods, capacity or
