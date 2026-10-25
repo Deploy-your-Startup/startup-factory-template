@@ -211,11 +211,92 @@ if [ -n "$registry_deployed" ]; then
   if [ "$vault_missing" -gt 0 ]; then
     echo -e "${YELLOW}$vault_missing deployed project(s) missing vault password.${NC}"
     echo ""
-    "$script_dir/secrets.sh" store-all
+    if has_tty; then
+      "$script_dir/secrets.sh" store-all
+    else
+      echo "  Secrets are entered only in an interactive terminal. Run there:"
+      echo "    scripts/secrets.sh store-all"
+    fi
   else
     echo -e "${GREEN}All vault passwords present.${NC}"
   fi
   echo ""
+fi
+
+# --- Phase 4b: Cluster access (optional) ---
+# Connects each deployed startup's kubectl_context over an SSH tunnel so its
+# pods are visible. Only useful with kubectl; nothing else depends on it.
+connect_cmds=()
+connect_hints=()
+connect_done=()
+
+# The master comes from the startup's cluster.yml, else from an existing
+# context that still points at the server directly.
+cluster_master() {
+  local name="$1" context="$2" deployment="$root_dir/projects/startups/$1/deployment"
+  local host="" cluster server
+  if [ -f "$deployment/cluster.yml" ]; then
+    host="$(yq '[.nodes[] | select(.role == "master") | .host][0] // ""' "$deployment/cluster.yml")"
+  fi
+  if [ -z "$host" ]; then
+    cluster="$(kubectl config view -o jsonpath="{.contexts[?(@.name==\"$context\")].context.cluster}" 2>/dev/null || true)"
+    server="$(kubectl config view -o jsonpath="{.clusters[?(@.name==\"$cluster\")].cluster.server}" 2>/dev/null || true)"
+    host="$(printf '%s' "$server" | sed -E 's#^https?://##; s#:[0-9]+$##')"
+  fi
+  printf '%s' "$host"
+}
+
+context_tunneled() {
+  local cluster server
+  cluster="$(kubectl config view -o jsonpath="{.contexts[?(@.name==\"$1\")].context.cluster}" 2>/dev/null || true)"
+  [ -n "$cluster" ] || return 1
+  server="$(kubectl config view -o jsonpath="{.clusters[?(@.name==\"$cluster\")].cluster.server}" 2>/dev/null || true)"
+  [[ "$server" == https://127.0.0.1:* ]]
+}
+
+if command -v kubectl &>/dev/null; then
+  while IFS=$'\t' read -r name _repo deployed context; do
+    [ "$deployed" = "true" ] && [ -n "$context" ] || continue
+    if context_tunneled "$context"; then
+      connect_done+=("$context")
+      continue
+    fi
+    host="$(cluster_master "$name" "$context")"
+    if [ -z "$host" ] || [ "$host" = "127.0.0.1" ]; then
+      connect_hints+=("  $context: cd projects/startups/$name/deployment && startup ansible kubeconfig --environment production --context-name $context")
+      continue
+    fi
+    namespace=""
+    if [ -f "$root_dir/projects/startups/$name/deployment/group_vars/all.yml" ]; then
+      namespace="$(yq '.k8s_namespace // ""' "$root_dir/projects/startups/$name/deployment/group_vars/all.yml")"
+    fi
+    connect_cmds+=("startup cluster connect --context $context --host $host${namespace:+ --namespace $namespace}")
+  done <<< "$registry_startups"
+
+  if [ "${#connect_cmds[@]}" -gt 0 ] || [ "${#connect_hints[@]}" -gt 0 ] || [ "${#connect_done[@]}" -gt 0 ]; then
+    echo "Cluster access (optional, needs SSH access to each master):"
+    for context in "${connect_done[@]+"${connect_done[@]}"}"; do
+      echo -e "  ${GREEN}✓${NC} $context — connected over SSH"
+    done
+    proceed=n
+    if [ "${#connect_cmds[@]}" -gt 0 ] && has_tty; then
+      printf '  Connect %d cluster context(s) over SSH now? [Y/n] ' "${#connect_cmds[@]}"
+      read -r proceed </dev/tty
+      proceed="${proceed:-y}"
+    fi
+    for cmd in "${connect_cmds[@]+"${connect_cmds[@]}"}"; do
+      if [ "$proceed" = y ] || [ "$proceed" = Y ]; then
+        # shellcheck disable=SC2086 # registry values are single words
+        $cmd || echo -e "  ${YELLOW}⊘${NC} failed: $cmd"
+      else
+        echo "  $cmd"
+      fi
+    done
+    for hint in "${connect_hints[@]+"${connect_hints[@]}"}"; do
+      echo "$hint"
+    done
+    echo ""
+  fi
 fi
 
 # --- Phase 5: Sprowi (beta, opt-in) ---
