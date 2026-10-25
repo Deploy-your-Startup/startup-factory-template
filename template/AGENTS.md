@@ -7,6 +7,9 @@ knowledge, invite contributions, and never publish personal startup lists,
 domains, production contexts, tasks, credentials or machine settings as
 template data.
 
+Before completing code changes, run lint and all tests locally, including
+browser E2E where available. Record failures and skips.
+
 ## Where the rules live
 
 | Topic | Source |

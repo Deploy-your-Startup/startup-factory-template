@@ -31,21 +31,11 @@ those flows are changed. Keep optional provider checks explicit and record the
 credentials or environment they require without storing secrets.
 
 
-### Local or CI browser verification
+### Local and CI tests
 
-Browser E2E remains required for changed user flows. An owner may explicitly
-select the shared workflow's local mode with `STARTUP_E2E_MODE=local`, after
-adopting a shared revision that supports it. Before approving a change in that
-mode, run the complete applicable E2E suite against the final committed source
-and record its commit, command, passed/failed/skipped results and reports in the
-PR or work record. Repeat the run after relevant source changes. CI reports
-browser E2E as not executed; it does not verify the local run. Manual workflow
-runs retain CI E2E execution. Unset/`ci` keeps the CI gate. Keep `run_e2e` enabled
-so execution policy stays in the shared workflow.
-
-Use distinct scenarios and configuration combinations that cover different
-behaviour; avoid duplicate browser checks and presentation-only cross-products.
-See [the shared testing decision](https://github.com/Deploy-your-Startup/deploy-template/blob/main/docs/adr/0005-local-or-ci-e2e.md) for the canonical policy.
+Run lint and all tests locally before completing code changes. Record failures
+and skips. `STARTUP_E2E_MODE=local` omits CI browser E2E; Dependabot PRs and manual
+runs still execute it. See [the shared testing decision](https://github.com/Deploy-your-Startup/deploy-template/blob/main/docs/adr/0005-local-or-ci-e2e.md).
 
 ## CI and release evidence
 
@@ -54,10 +44,7 @@ coverage of every feature. Report executed, failed and skipped checks separately
 a skipped provider scenario is unverified, not a pass. State remaining gaps when
 reporting completion. Local checks alone do not prove a production deployment.
 
-Preserve E2E verification before approving application deployments, using the
-selected local or CI mode above.
-Run browser E2E before approving user-flow changes, using the selected local
-or CI mode. Backend coverage alone does not replace browser verification.
+Run all tests locally before completing code changes.
 Every enabled shard must succeed before publishing or deployment. Use isolated
 data for each shard, retain reports and failure logs, and clean up disposable
 resources. Improve speed through caching and independent parallel checks rather
