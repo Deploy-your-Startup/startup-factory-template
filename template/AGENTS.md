@@ -10,6 +10,9 @@ template data.
 Before completing code changes, run lint and all tests locally, including
 browser E2E where available. Record failures and skips.
 
+Read `run_e2e` in `.github/workflows/`: `false` means local E2E only,
+`true` also runs it in CI. Dependabot PRs always run E2E in CI.
+
 ## Where the rules live
 
 | Topic | Source |
