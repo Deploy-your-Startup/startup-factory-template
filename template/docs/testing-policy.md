@@ -30,6 +30,14 @@ Record uncovered flows in project documentation or issues and extend coverage as
 those flows are changed. Keep optional provider checks explicit and record the
 credentials or environment they require without storing secrets.
 
+
+### Local and CI tests
+
+Run lint and all tests locally before completing code changes. Record failures
+and skips. Read `run_e2e` in the project workflow: `false` skips CI browser tests;
+`true` enables them.
+Dependabot PRs always run E2E in CI. See [the shared testing decision](https://github.com/Deploy-your-Startup/deploy-template/blob/main/docs/adr/0005-local-or-ci-e2e.md).
+
 ## CI and release evidence
 
 A green pipeline means the enabled checks passed. It does not prove complete
@@ -37,9 +45,7 @@ coverage of every feature. Report executed, failed and skipped checks separately
 a skipped provider scenario is unverified, not a pass. State remaining gaps when
 reporting completion. Local checks alone do not prove a production deployment.
 
-Preserve E2E as a deployment gate where the project deploys an application.
-Run browser E2E in pull request CI; local runs and backend coverage do not
-replace it.
+Run all tests locally before completing code changes.
 Every enabled shard must succeed before publishing or deployment. Use isolated
 data for each shard, retain reports and failure logs, and clean up disposable
 resources. Improve speed through caching and independent parallel checks rather
