@@ -18,14 +18,17 @@ curl -fsSL https://deploy-your-startup.com/install.sh | bash
 gh auth login -h github.com -p https -s repo,workflow,read:packages,write:packages
 gh auth setup-git
 startup doctor
-startup factory init --version v0.1.1 --project-dir my-factory --setup
+startup factory init --project-dir my-factory --setup
 cd my-factory
 startup bootstrap
 ```
 
-The CLI pins this template's v0.1.1 release. `--setup` installs missing workspace
-tools through Homebrew when available, installs the declared mise runtimes and
-clones the public tooling. Without Homebrew, follow the printed prerequisites
+The CLI selects its pinned, supported Factory template release by default.
+Use `startup factory init --help` to see the default for your installed CLI;
+pass `--version <release-tag>` only to deliberately select another release.
+`--setup` installs missing workspace tools through Homebrew when available,
+installs the declared mise runtimes and clones the public tooling.
+Without Homebrew, follow the printed prerequisites
 and rerun the same command. Existing Factory files survive retries. Initializing
 the workspace creates no cloud resources. Bootstrap shows provider costs and
 asks before creating the application and infrastructure.
@@ -64,6 +67,6 @@ preservation of owner configuration and custom files. Never add personal startup
 lists, account identifiers, secrets or production context to this source.
 
 Use an immutable Git release tag for distribution. Before publishing, verify
-README commands against the released CLI, pin the published CLI and template
-versions in a complete quickstart, verify public download URLs, review the
+README commands against the released CLI and its pinned Factory default in a
+complete quickstart, verify public release refs and download URLs, review the
 license and run the lifecycle checks. No release is implied by a local render.
