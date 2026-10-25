@@ -34,8 +34,8 @@ credentials or environment they require without storing secrets.
 ### Local and CI tests
 
 Run lint and all tests locally before completing code changes. Record failures
-and skips. `STARTUP_E2E_MODE=local` omits CI browser E2E; Dependabot PRs and manual
-runs still execute it. See [the shared testing decision](https://github.com/Deploy-your-Startup/deploy-template/blob/main/docs/adr/0005-local-or-ci-e2e.md).
+and skips. `RUN_E2E_IN_CI=false` skips the additional CI browser run.
+Dependabot PRs always run E2E in CI. See [the shared testing decision](https://github.com/Deploy-your-Startup/deploy-template/blob/main/docs/adr/0005-local-or-ci-e2e.md).
 
 ## CI and release evidence
 
