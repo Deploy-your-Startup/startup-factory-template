@@ -113,7 +113,7 @@ for (const engine of ["claude", "codex"]) {
       for (const name of ["research.json", "result.patch", "result.json", "usage.json", "summary.md"]) assert.ok(existsSync(join(archive, name)));
       assert.equal(readdirSync(join(archive, "ideas")).length, 3);
       assert.equal(existsSync(join(f.factory, "ideas")), false);
-      assert.doesNotMatch(f.git("status", "--porcelain"), /discovery\/state/);
+      assert.equal(f.git("status", "--porcelain"), "", "Daily inputs and results must all remain private and gitignored.");
       const calls = readFileSync(join(f.root, "prompts.log"), "utf8");
       assert.match(calls, /NEW markets are allowed/); assert.match(calls, /Provided research is supplied evidence/);
       const again = await f.run(["run", "--date", "2026-01-01", "--research-file", f.research]);
