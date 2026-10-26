@@ -223,6 +223,107 @@ Substance is judged by the reviewer, which has its own rubric for this target in
 `sprowi/projects/startup-factory.review.md`; the code rubric would ask an idea
 file about ADRs and test coverage.
 
+### Daily discovery, with Claude or Codex
+
+The same discovery workflow works without a Codex app or chat:
+
+```bash
+scripts/sprowi.sh discover run --engine claude
+scripts/sprowi.sh discover run --engine codex
+scripts/sprowi.sh discover status
+```
+
+Omit `--engine` to use `engine` in `sprowi/discovery/config.json`, or the normal
+Sprowi engine default when it is unset. The existing engine models, credentials
+and budgets apply. Docker Desktop, authenticated sbx and a committed source
+checkout are required. The CLI never switches providers or runs an unsandboxed
+agent when a prerequisite fails. Failed attempts remain available for diagnosis.
+
+Each run collects dated public research on the host, passes the research,
+preferences, explicit feedback, archived proposals and recorded experiment data
+to the existing sandbox loop, and archives three ranked ideas with its reviewer
+verdict. A task-specific reviewer allows new markets. The host checks that only
+three new idea files were added, each cites supplied evidence, all required
+sections exist, ranks are unique, and titles do not repeat archived proposals.
+Semantic duplication and truthfulness still need the model review and owner
+judgment. Findings remain visible; structural checks do not validate demand.
+
+`sprowi/discovery/config.json` is owner-managed and survives template updates.
+Set `language`, `timezone`, `preferences`, `excludedIdeas`, optional `engine`,
+`rounds` and `research.urls` there. URLs must be public read-only sources; never
+put credentials or private URLs in research configuration. The default uses
+Ask HN stories and comments from the [official Hacker News API](https://github.com/HackerNews/API).
+That is a developer-heavy sample, not a broad market search. Add sources for
+your actual audience; redirects are refused, and failed sources are recorded.
+The initial source collector does not search the whole web or establish prices,
+interview claims or willingness to pay on its own.
+
+For research prepared through a browser, connected source or your own process:
+
+```bash
+scripts/sprowi.sh discover run --research-file /absolute/path/research.json
+```
+
+The JSON contains `sources`, each with `url`, `title`, `text` (at least 40
+characters) and `observedAt` (an ISO timestamp). Supplied evidence is labeled
+`provided`; the command does not pretend it fetched those pages. Missing sources
+stop the run rather than yielding invented evidence.
+
+Results live in the private, gitignored `sprowi/discovery/state/history/YYYY-MM-DD/`:
+three full ideas, `summary.md` with the favorite first, research, patch, verdict,
+usage and `batch.json`. The source `ideas/` directory is unchanged. Repeating a
+completed local date reuses its archive; a filesystem lock prevents concurrent
+model runs. Failures are retained under `state/attempts/` and may be retried.
+After an interrupted process, inspect `state/run.lock/owner.json` and confirm
+the process is no longer running before removing its stale lock.
+
+Record a decision explicitly, using a filename from the archived batch:
+
+```bash
+scripts/sprowi.sh discover feedback 2026-01-01 001-example.md rejected \
+  --reason "I cannot reach this audience"
+```
+
+Decisions are `interesting`, `test` or `rejected`; a reason is required. They
+are appended to `state/feedback.jsonl` and enter future runs. Silence and model
+rankings are not approval. Selecting an idea for an experiment still uses
+`select` with its archived idea file; discovery never builds, publishes,
+contacts users, buys domains or deploys.
+
+#### Optional local schedule
+
+Preview a daily job, then explicitly enable it on macOS:
+
+```bash
+scripts/sprowi.sh discover schedule --at 08:00 --engine claude
+scripts/sprowi.sh discover schedule --at 08:00 --engine claude --install
+```
+
+The preview writes `state/schedule.plist` and installs nothing. `--install`
+registers an owner LaunchAgent with absolute Node and CLI paths, the current
+PATH and log files in `state/`. It starts `discover run`; no Codex installation
+is required when Claude is selected. launchd uses the Mac's system timezone;
+the requested timezone must match it, including daylight-saving rules. The Mac,
+Docker and the owner's login session must be available. Inspect
+`state/scheduler.stderr.log` for background authentication or filesystem-access
+failures; scheduled execution cannot answer Keychain/browser login prompts.
+Use `launchctl bootout gui/$(id -u) /absolute/path/to/the/installed.plist` to stop
+the job; its installed path and label are in `state/schedule.json`. Changing
+an existing job requires unloading and reviewing its plist first.
+
+Other schedulers can invoke the same `discover run` command on an environment
+that supports Sprowi. A Codex automation should invoke that command and read
+the archived summary; it should not duplicate the prompts or enable a second
+local schedule. All engines share the pipeline, while research, decisions and
+history remain in the owner's workspace rather than the distributed template.
+
+Coverage: `discovery.integration.test.mjs` exercises the real CLI, Git patches,
+source collection, persistence, feedback, date idempotency, duplicate rejection,
+denied sandbox access, invalid inputs, concurrency and schedule previews. Only
+the external VM, model executables and launchd service are local stand-ins.
+Those offline scenarios do not prove real sandbox isolation, paid-provider
+availability, model quality or an actual launchd wakeup. No browser UI is added.
+
 ### What a round does
 
 ```mermaid

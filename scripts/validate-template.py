@@ -15,7 +15,7 @@ def main():
     if any(path.is_symlink() for path in source.rglob("*")):
         parser.error("template contains a symlink; review it before publishing")
     forbidden = {".git", ".env", ".sprowi-legacy", ".DS_Store"}
-    owner_roots = {"projects", "sprowi/tasks", "sprowi/runs", "sprowi/experiments"}
+    owner_roots = {"projects", "sprowi/tasks", "sprowi/runs", "sprowi/experiments", "sprowi/discovery/state"}
     for path in source.rglob("*"):
         relative = path.relative_to(source)
         if any(part in forbidden for part in relative.parts) or any(

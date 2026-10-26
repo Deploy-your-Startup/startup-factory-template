@@ -282,6 +282,12 @@ export async function runLoop({ projectName, taskDirectory, engineName, model, r
     reason: null,
     problems: null,
     review: null,
+    artifacts: {
+      directory: output,
+      patch: join(output, "result.patch"),
+      result: join(output, "result.json"),
+      usage: join(output, "usage.json"),
+    },
   };
 
   function emit(event) {

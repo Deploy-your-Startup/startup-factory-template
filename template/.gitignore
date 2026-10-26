@@ -14,3 +14,4 @@ __pycache__/
 node_modules/
 
 /sprowi/runs/
+/sprowi/discovery/state/

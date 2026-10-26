@@ -6,6 +6,7 @@ _skip_if_exists:
   - projects.yaml
   - sprowi/config.default.json
   - sprowi/projects/**
+  - sprowi/discovery/config.json
 project_name:
   type: str
   default: my-factory
