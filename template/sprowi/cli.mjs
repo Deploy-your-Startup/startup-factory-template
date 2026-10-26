@@ -14,7 +14,7 @@ import {
 } from "node:fs";
 import { join, resolve } from "node:path";
 import { parseArgs } from "node:util";
-import { ENGINES, hubRoot, loadConfig, readJson, registryProjects, resolveEngine, resolveProject } from "./lib.mjs";
+import { ENGINES, hubRoot, loadConfig, readJson, registryProjects, resolveEngine, resolveProject, supportsSandboxSkillIsolation } from "./lib.mjs";
 import { evaluateSelectedIdea, experimentDirectory, makeIdeaTask, selectIdea } from "./experiment.mjs";
 
 const USAGE = `Sprowi · your startup companion
@@ -276,6 +276,7 @@ function doctor(engineName) {
     "Start Docker Desktop 4.58 or newer.",
   );
   healthy &= check("sbx", spawnSync("sbx", ["version"], { stdio: "ignore" }).status === 0, "brew install sbx");
+  healthy &= check("sbx supports isolated skills (--skills=off)", supportsSandboxSkillIsolation(), "brew upgrade --cask docker/tap/sbx (keep sandboxOptions.skills: off)");
   healthy &= check(
     "sbx is signed in",
     spawnSync("sbx", ["ls", "--json"], { stdio: "ignore" }).status === 0,

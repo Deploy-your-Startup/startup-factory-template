@@ -43,6 +43,7 @@ import {spawnSync} from 'node:child_process';
 const args=process.argv.slice(2), stateFile=${JSON.stringify(join(root, "sandboxes.json"))};
 const state=existsSync(stateFile)?JSON.parse(readFileSync(stateFile,'utf8')):{};
 if(args[0]==='version'){console.log('local external boundary');process.exit(0);}
+if(args[0]==='create'&&args.includes('--help')){console.log(existsSync(${JSON.stringify(join(root, "old-sbx"))})?'old create flags':'--skills string');process.exit(0);}
 if(args[0]==='ls'){if(existsSync(${JSON.stringify(join(root, "deny-sbx"))})){console.error('synthetic login unavailable');process.exit(1);}console.log('[]');process.exit(0);}
 if(args[0]==='env'&&args[1]==='create'){
  const values={};for(let i=0;i<args.length;i++)if(args[i]==='--env-arg'){const [k,...v]=args[++i].split('=');values[k]=v.join('=');}
@@ -169,6 +170,18 @@ test("GIVEN denied sandbox access or invalid research WHEN discovery runs THEN i
     assert.equal(existsSync(join(f.factory, "sprowi/discovery/state/history")), false);
     const attempts = join(f.factory, "sprowi/discovery/state/attempts");
     assert.ok(readdirSync(attempts).every((name) => JSON.parse(readFileSync(join(attempts, name, "attempt.json"), "utf8")).status === "failed"));
+  } finally { f.close(); }
+});
+
+test("GIVEN an old sbx without skills isolation WHEN discovery runs THEN it requests an upgrade before creating a sandbox", async () => {
+  const f = fixture();
+  try {
+    writeFileSync(join(f.root, "old-sbx"), "unsupported");
+    const result = await f.run(["run", "--date", "2026-01-01", "--research-file", f.research]);
+    assert.equal(result.status, 1); assert.match(result.stderr, /lacks --skills=off support/);
+    assert.match(result.stderr, /Do not remove sandboxOptions.skills: off/);
+    assert.equal(existsSync(join(f.root, "sandboxes.json")), false);
+    assert.equal(existsSync(join(f.root, "prompts.log")), false);
   } finally { f.close(); }
 });
 

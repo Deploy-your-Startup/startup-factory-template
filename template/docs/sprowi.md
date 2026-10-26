@@ -47,7 +47,11 @@ new tokens.
 
 By hand, it is three steps:
 
-1. Docker Desktop 4.58 or newer, plus `sbx`:
+1. Docker Desktop 4.58 or newer, plus a current `sbx` with `--skills=off`
+   support (`sbx create --help`). Old builds such as 0.42.1 cannot parse the
+   required isolation setting; `doctor` and the loop refuse them before creating
+   a VM. Update with `brew upgrade --cask docker/tap/sbx` rather than removing
+   `sandboxOptions.skills: off` from the checked-in definitions:
 
    ```bash
    sbx login && sbx policy init balanced

@@ -33,6 +33,7 @@ import {
   loadConfig,
   resolveEngine,
   resolveProject,
+  supportsSandboxSkillIsolation,
   validateConfig,
   validatePatch,
 } from "./lib.mjs";
@@ -78,6 +79,9 @@ export async function runLoop({ projectName, taskDirectory, engineName, model, r
     throw new Error(`The task directory has no ${config.inputFiles.task}: ${taskDirectory}`);
   }
   run("sbx", ["version"], { capture: true });
+  if (!supportsSandboxSkillIsolation()) {
+    throw new Error("Installed sbx lacks --skills=off support required by Sprowi's sandbox isolation. Upgrade Docker Sandboxes with `brew upgrade --cask docker/tap/sbx`, then rerun. Do not remove sandboxOptions.skills: off.");
+  }
   if (run("sbx", ["ls", "--json"], { allowFailure: true, capture: true }).status !== 0) {
     throw new Error("Docker Sandboxes is not authenticated. Run: sbx login && sbx policy init balanced");
   }
