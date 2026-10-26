@@ -10,6 +10,13 @@ export const ENGINES = ["claude", "codex", "opencode", "copilot"];
 
 export const hubRoot = resolve(import.meta.dirname, "..");
 
+// Old sbx builds cannot disable the shared skills mount and also reject the
+// corresponding environment-file field. Fail closed rather than dropping it.
+export function supportsSandboxSkillIsolation() {
+  const result = spawnSync("sbx", ["create", "--help"], { encoding: "utf8", timeout: 30000 });
+  return result.status === 0 && /--skills(?:\s|=)/.test(result.stdout);
+}
+
 export function readJson(path) {
   return JSON.parse(readFileSync(path, "utf8"));
 }
