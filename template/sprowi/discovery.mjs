@@ -222,7 +222,7 @@ async function runDiscovery(options) {
     const report = await research(config, options["research-file"]);
     json(join(attempt, "research.json"), report);
     if (!report.sources.length) throw new Error(`No usable research sources; inspect ${join(attempt, "research.json")}. Supply --research-file or configure research.urls.`);
-    const task = join(hubRoot, "sprowi/tasks/startup-factory", `discovery-${day}-${randomUUID()}`);
+    const task = join(attempt, `discovery-${day}`);
     mkdirSync(task, { recursive: true });
     for (const name of ["task.md", "review.md"]) copyFileSync(join(directory, name), join(task, name));
     writeFileSync(join(task, "loop.md"), context(config, report));
