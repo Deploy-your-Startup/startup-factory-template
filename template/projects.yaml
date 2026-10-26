@@ -1,4 +1,8 @@
 # Your startups belong here. Tooling is included so everyone can contribute.
+# Private OWNER/NAME repository for PR review screenshots, created by
+# `startup evidence upload` on first use. Keeps images out of code history.
+evidence_repo: ""
+
 projects: []
 
 tooling:

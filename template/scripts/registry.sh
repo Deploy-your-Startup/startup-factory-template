@@ -14,6 +14,8 @@ set -euo pipefail
 #   startups          name <TAB> repo <TAB> deployed <TAB> kubectl_context
 #   tooling           name <TAB> repo
 #   deployed          name        (startups with `deployed: true`)
+#   evidence-repo     OWNER/NAME of the private PR review evidence repository
+#                     (`evidence_repo`; empty when unset)
 #   check             compare the registry with the checkouts under projects/;
 #                     prints each drift and exits 1 if there is any
 #   same-repo A B     exit 0 when two remote URLs name the same repository
@@ -51,6 +53,14 @@ check_registry() {
       [.projects[] | select((.deployed != true) and ((.url // "") != "")) | [.name, "url without deployed: true"]] +
       [.projects[] | select((.deployed != true) and ((.kubectl_context // "") != "")) | [.name, "kubectl_context without deployed: true"]] |
       .[] | @tsv' "$projects_yaml")
+
+  # Review screenshots go to one private repository, written by
+  # `startup evidence upload`; it must name a GitHub OWNER/NAME.
+  local evidence
+  evidence="$(yq '.evidence_repo // ""' "$projects_yaml")"
+  if [ -n "$evidence" ] && ! [[ "$evidence" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]]; then
+    report "evidence_repo — $evidence is not OWNER/NAME"
+  fi
 
   for section in projects:startups tooling:tooling; do
     kind="${section#*:}"
@@ -93,6 +103,9 @@ case "${1:-}" in
   deployed)
     yq '.projects[] | select(.deployed == true) | .name' "$projects_yaml"
     ;;
+  evidence-repo)
+    yq '.evidence_repo // ""' "$projects_yaml"
+    ;;
   check)
     check_registry
     ;;
@@ -101,7 +114,7 @@ case "${1:-}" in
     [ "$(normalize_repo "$2")" = "$(normalize_repo "$3")" ]
     ;;
   *)
-    printf 'Usage: %s {startups|tooling|deployed|check|same-repo}\n' "$(basename "$0")" >&2
+    printf 'Usage: %s {startups|tooling|deployed|evidence-repo|check|same-repo}\n' "$(basename "$0")" >&2
     exit 1
     ;;
 esac
