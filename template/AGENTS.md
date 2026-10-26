@@ -36,6 +36,9 @@ unreviewed registry. Set `deployed`, `url` and `kubectl_context` only after
 verifying Actions, DNS, HTTPS and cluster access, with one context and the right
 namespace per startup. Keep the tooling list so everyone can inspect, fork and
 contribute; do not assume upstream write access.
+`evidence_repo` names the private `OWNER/NAME` repository for pull request
+review screenshots; `startup evidence upload` creates it on first use and prints
+the links to embed, so screenshots never enter code history.
 
 Start every session with `scripts/sync.sh` before reading guidance or acting;
 worktrees branch from local `main`, which may be stale.

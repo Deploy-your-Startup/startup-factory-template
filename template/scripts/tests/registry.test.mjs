@@ -94,6 +94,24 @@ tooling: []
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
+test("GIVEN an evidence repository WHEN checking and reading it THEN OWNER/NAME passes and anything else is drift", () => {
+  const valid = workspace("evidence_repo: example/review-evidence\nprojects: []\ntooling: []\n");
+  const invalid = workspace("evidence_repo: https://github.com/example/review-evidence\nprojects: []\ntooling: []\n");
+  try {
+    const ok = check(valid);
+    const read = spawnSync("bash", [join(valid, "scripts/registry.sh"), "evidence-repo"], { cwd: valid, env, encoding: "utf8" });
+    const bad = check(invalid);
+
+    assert.equal(ok.status, 0, ok.stdout + ok.stderr);
+    assert.equal(read.stdout, "example/review-evidence\n");
+    assert.equal(bad.status, 1, bad.stdout + bad.stderr);
+    assert.match(bad.stdout, /evidence_repo — https:\/\/github\.com\/example\/review-evidence is not OWNER\/NAME/);
+  } finally {
+    rmSync(valid, { recursive: true, force: true });
+    rmSync(invalid, { recursive: true, force: true });
+  }
+});
+
 test("GIVEN a registered repository that is not cloned WHEN checking THEN init is suggested", () => {
   const root = workspace("projects:\n  - name: absent\n    repo: https://github.com/example/absent.git\ntooling: []\n");
   try {
