@@ -23,6 +23,8 @@ const USAGE = `Sprowi · your startup companion
   scripts/sprowi.sh new  <project> <slug>       scaffold a task directory
   scripts/sprowi.sh ideas [--for <project>]     write a brief and run it: ideas for
                                               one startup, or for new ones
+  scripts/sprowi.sh discover [run|status|feedback|schedule]
+                                              research, review and archive daily startup bets
   scripts/sprowi.sh select <idea.md> <slug>    select an idea and create its experiment plan
   scripts/sprowi.sh evaluate <slug>           evaluate the recorded KPI against the plan
   scripts/sprowi.sh run  <project> <task>       run the loop
@@ -318,7 +320,10 @@ function doctor(engineName) {
 // --- dispatch -------------------------------------------------------------
 
 try {
-  if (command === "init") {
+  if (command === "discover") {
+    const { discoveryCommand } = await import("./discovery.mjs");
+    await discoveryCommand(rest);
+  } else if (command === "init") {
     const { values, positionals } = parseArgs({ args: rest, options: { force: { type: "boolean" } }, allowPositionals: true });
     if (!positionals[0]) fail(USAGE);
     initProject(positionals[0], values.force);
@@ -341,7 +346,7 @@ try {
     const { githubSetup } = await import("./github-setup.mjs");
     await githubSetup({ name: values.name, org: values.org });
   } else if (command === "test") {
-    const result = spawnSync(process.execPath, ["--test", ...["publish", "experiment", "agent"].map((name) => join(hubRoot, `sprowi/${name}.integration.test.mjs`))], { stdio: "inherit" });
+    const result = spawnSync(process.execPath, ["--test", ...["publish", "experiment", "agent", "discovery"].map((name) => join(hubRoot, `sprowi/${name}.integration.test.mjs`))], { stdio: "inherit" });
     process.exit(result.status ?? 1);
   } else if (command === "doctor") {
     const { values } = parseArgs({ args: rest, options: { engine: { type: "string" } } });

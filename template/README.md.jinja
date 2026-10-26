@@ -107,3 +107,9 @@ Run `scripts/init.sh --with-sprowi` only when you want the Sprowi agent loop. It
 Docker Desktop, sbx and an engine account. See [docs/sprowi.md](docs/sprowi.md) for
 setup, budgets, experiments and publishing with your own GitHub App. No App ID,
 personal task history or production credentials are bundled.
+
+For daily startup research, ranked ideas and decision memory, run
+`scripts/sprowi.sh discover run --engine claude` (or `--engine codex`). Both use
+the same sandbox loop and archive results locally without building or deploying.
+An optional macOS schedule works without Codex; see
+[daily discovery](docs/sprowi.md#daily-discovery-with-claude-or-codex).

@@ -1,0 +1,13 @@
+{
+  "timezone": "Europe/Berlin",
+  "language": "English",
+  "rounds": 2,
+  "preferences": [],
+  "excludedIdeas": [],
+  "research": {
+    "hackerNews": true,
+    "storyLimit": 8,
+    "commentsPerStory": 2,
+    "urls": []
+  }
+}
