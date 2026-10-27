@@ -286,6 +286,75 @@ model runs. Failures are retained under `state/attempts/` and may be retried.
 After an interrupted process, inspect `state/run.lock/owner.json` and confirm
 the process is no longer running before removing its stale lock.
 
+#### Reading the ideas away from your computer
+
+Export an already completed batch as a GitHub-readable morning edition:
+
+```bash
+scripts/sprowi.sh discover export --date 2026-01-01
+```
+
+This creates `discovery/README.md` with the latest three ranked cards and links
+to all exported dates. `discovery/YYYY-MM-DD/README.md` contains the test,
+success/stop criteria, objections and review/research status; `ideas/` under
+that date contains unchanged copies of the three archived proposals. No model
+call or sandbox is needed for an export. Report labels are English; proposal
+content retains the configured discovery language. Source headings remain the
+shared idea format. Raw research, feedback, usage and engine logs stay local.
+The `discovery/` copies are tracked files, so review them before sharing.
+
+Enable this after every successful `discover run` in the owner-managed
+`sprowi/discovery/config.json`:
+
+```json
+"reading": {
+  "enabled": true,
+  "publish": false,
+  "repository": ""
+}
+```
+
+Existing configurations without `reading` and new factories both default to
+no export and no publication. With `enabled: true`, a reused completed date
+also refreshes the reading copies, without generating another batch. A failed
+or incomplete batch never replaces the latest edition; exporting an older date
+retains newer editions. This works with Claude, Codex and the other engines,
+including an external scheduler with no Codex app.
+
+For automatic commits and pushes, explicitly set `publish: true` and
+`repository` to the owner's private `OWNER/REPO`. Commit and push that
+configuration before the next run. To publish a single existing batch instead:
+
+```bash
+scripts/sprowi.sh discover export --date 2026-01-01 --publish
+```
+
+The explicit command also requires `reading.repository`; it does not enable
+future automatic publication. GitHub CLI authentication with access to that
+repository is required. Before writing, the host checks that actual `origin`
+matches the configured repository, GitHub reports it private, the checkout is
+on its default branch, the worktree/index are clean, and local HEAD equals
+the remote branch. It commits only the five generated reading files and uses
+a normal push. No changes means no new commit. Public/other repositories,
+denied access, staged/untracked owner changes and unpushed commits stop the
+operation. There is no stash, reset, rebase, force-push or conflict resolution.
+Symlinked input/output paths and invalid/incomplete archives are refused.
+
+If export or push fails, the successful private batch remains complete.
+Re-running its date retries export rather than the model. Review leftover
+reading files or a locally committed but unpushed edition yourself and restore
+a clean, synchronized checkout before retrying; a racing remote push is not
+resolved automatically. Do not commit other work just to satisfy this check.
+`state/reading.lock/owner.json` identifies a concurrent/interrupted export;
+confirm that process has ended before removing a stale lock.
+
+Bookmark the repository's `discovery/` directory to read published editions on
+your phone while the computer is offline. Generation still requires the
+configured runner, Docker and engine credentials to be available; publication
+does not move generation to the cloud. These personal editions belong only to
+the owner's repository; template validation rejects a `template/discovery/`
+directory. Factory updates preserve the owner's reading configuration and files.
+
 Record a decision explicitly, using a filename from the archived batch:
 
 ```bash
@@ -325,6 +394,10 @@ that supports Sprowi. A Codex automation should invoke that command and read
 the archived summary; it should not duplicate the prompts or enable a second
 local schedule. All engines share the pipeline, while research, decisions and
 history remain in the owner's workspace rather than the distributed template.
+With reading publication enabled, use the printed `READING_PUBLISHED` URL in
+notifications. A chat automation should call the shared command and link the
+edition; do not duplicate the rendering, staging or publishing procedure in its
+prompt or enable a second scheduler.
 
 Coverage: `discovery.integration.test.mjs` exercises the real CLI, Git patches,
 source collection, persistence, feedback, date idempotency, duplicate rejection,
@@ -332,6 +405,11 @@ denied sandbox access, invalid inputs, concurrency and schedule previews. Only
 the external VM, model executables and launchd service are local stand-ins.
 Those offline scenarios do not prove real sandbox isolation, paid-provider
 availability, model quality or an actual launchd wakeup. No browser UI is added.
+`discovery-reading.integration.test.mjs` additionally exercises the actual CLI,
+complete archives, symlink refusal, linked/date-ordered Markdown, real Git
+commits and pushes to a local bare origin, idempotency, matching/private-origin
+checks, denied GitHub access and protection of dirty worktrees. Only GitHub's
+metadata API is a local stand-in; live OAuth is a separate operator check.
 
 ### What a round does
 

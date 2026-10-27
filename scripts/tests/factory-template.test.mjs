@@ -72,10 +72,13 @@ test("GIVEN a generated factory with owner data WHEN previewing and applying the
     const discovery = JSON.parse(readFileSync(discoveryConfig, "utf8"));
     discovery.language = "Owner language";
     discovery.preferences = ["Owner's private audience"];
+    discovery.reading = { enabled: true, publish: false, repository: "example-owner/private-factory" };
     writeFileSync(discoveryConfig, JSON.stringify(discovery));
     const privateHistory = join(factory, "sprowi/discovery/state/history");
     mkdirSync(privateHistory, { recursive: true });
     writeFileSync(join(privateHistory, "owner-note.txt"), "Private decisions survive updates\n");
+    mkdirSync(join(factory, "discovery/2025-01-01"), { recursive: true });
+    writeFileSync(join(factory, "discovery/2025-01-01/README.md"), "Owner reading edition\n");
     writeFileSync(join(factory, "owner-notes.md"), "Only this instance\n");
     writeFileSync(join(factory, "README.md"), readFileSync(join(factory, "README.md"), "utf8") + "\nOwner customization.\n");
     const projectSettings = join(factory, "sprowi/projects/startup-factory.json");
@@ -112,6 +115,7 @@ test("GIVEN a generated factory with owner data WHEN previewing and applying the
     assert.equal(readFileSync(projectSettings, "utf8"), JSON.stringify(ownerSettings));
     assert.equal(readFileSync(discoveryConfig, "utf8"), JSON.stringify(discovery));
     assert.equal(readFileSync(join(privateHistory, "owner-note.txt"), "utf8"), "Private decisions survive updates\n");
+    assert.equal(readFileSync(join(factory, "discovery/2025-01-01/README.md"), "utf8"), "Owner reading edition\n");
     assert.match(readFileSync(join(factory, "README.md"), "utf8"), /Owner customization/);
     assert.match(readFileSync(join(factory, "README.md"), "utf8"), /new shared onboarding improvement/);
     assert.equal(readFileSync(join(factory, "owner-notes.md"), "utf8"), "Only this instance\n");
@@ -122,7 +126,22 @@ test("GIVEN a generated factory with owner data WHEN previewing and applying the
 });
 
 
-for (const ownerPath of ["template/.git/config", "template/sprowi/tasks/private/task.md", "template/sprowi/runs/private/result.json", "template/sprowi/experiments/private/observation.json", "template/sprowi/discovery/state/feedback.jsonl", "template/.env"]) {
+test("GIVEN an owner reading repository in template defaults WHEN validating THEN automatic publication is rejected", () => {
+  const temp = mkdtempSync(join(tmpdir(), "factory-reading-privacy-"));
+  try {
+    copySource(temp);
+    mkdirSync(join(temp, "scripts"));
+    cpSync(join(root, "scripts/validate-template.py"), join(temp, "scripts/validate-template.py"));
+    const path = join(temp, "template/sprowi/discovery/config.json");
+    const config = JSON.parse(readFileSync(path, "utf8"));
+    config.reading = { enabled: true, publish: true, repository: "example-owner/private-factory" };
+    writeFileSync(path, JSON.stringify(config));
+    const result = spawnSync(python, [join(temp, "scripts/validate-template.py")], { encoding: "utf8" });
+    assert.notEqual(result.status, 0); assert.match(result.stderr, /must not enable owner reading/);
+  } finally { rmSync(temp, { recursive: true, force: true }); }
+});
+
+for (const ownerPath of ["template/.git/config", "template/sprowi/tasks/private/task.md", "template/sprowi/runs/private/result.json", "template/sprowi/experiments/private/observation.json", "template/sprowi/discovery/state/feedback.jsonl", "template/discovery/2026-01-01/README.md", "template/.env"]) {
   test(`GIVEN owner state at ${ownerPath} WHEN validating THEN publication is rejected`, () => {
     const temp = mkdtempSync(join(tmpdir(), "factory-privacy-"));
     try {

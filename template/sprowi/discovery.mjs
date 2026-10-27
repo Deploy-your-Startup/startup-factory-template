@@ -7,6 +7,7 @@ import { homedir, tmpdir } from "node:os";
 import { basename, join } from "node:path";
 import { parseArgs } from "node:util";
 import { hubRoot, loadConfig, readJson, resolveEngine, validatePatch } from "./lib.mjs";
+import { exportReading, readingSettings } from "./discovery-reading.mjs";
 
 const directory = join(hubRoot, "sprowi/discovery");
 const state = join(directory, "state");
@@ -17,6 +18,7 @@ const HELP = `Daily startup discovery
       [--model <id>] [--timezone <IANA zone>] [--date YYYY-MM-DD]
       [--research-file <JSON>]
   scripts/sprowi.sh discover status
+  scripts/sprowi.sh discover export [--date YYYY-MM-DD] [--publish]
   scripts/sprowi.sh discover feedback <date> <idea filename> interesting|test|rejected
       --reason <text>
   scripts/sprowi.sh discover schedule [--at HH:MM] [--engine <name>]
@@ -24,6 +26,7 @@ const HELP = `Daily startup discovery
 
 Configuration: sprowi/discovery/config.json (owner-managed).
 Results: sprowi/discovery/state/ (private, gitignored).
+Reading copies: discovery/ (opt-in, tracked); --publish requires a private repo.
 Schedule previews write a launchd plist; --install explicitly enables it on macOS.
 `;
 
@@ -41,6 +44,7 @@ function command(executable, args, cwd = hubRoot) {
 
 function settings(options) {
   const config = readJson(join(directory, "config.json"));
+  readingSettings(config);
   config.timezone = options.timezone ?? config.timezone;
   new Intl.DateTimeFormat("en", { timeZone: config.timezone }).format();
   if (!Number.isInteger(config.rounds) || config.rounds < 1 || config.rounds > 5) throw new Error("Discovery rounds must be between 1 and 5.");
@@ -208,7 +212,9 @@ async function runDiscovery(options) {
   const destination = join(history, day);
   const manifest = join(destination, "batch.json");
   if (existsSync(manifest) && readJson(manifest).status === "complete") {
-    console.log(`Already complete: ${join(destination, "summary.md")}`); return;
+    console.log(`Already complete: ${join(destination, "summary.md")}`);
+    if (readingSettings(config).enabled) exportReading({ day, config, publish: readingSettings(config).publish });
+    return;
   }
   mkdirSync(state, { recursive: true, mode: 0o700 });
   const lock = join(state, "run.lock");
@@ -247,6 +253,8 @@ async function runDiscovery(options) {
     json(join(attempt, "attempt.json"), { ...status, status: "failed", error: error.message, finishedAt: new Date().toISOString() });
     throw error;
   } finally { rmSync(lock, { recursive: true, force: true }); }
+  // Export errors preserve the successful batch; a retry needs no model call.
+  if (readingSettings(config).enabled) exportReading({ day, config, publish: readingSettings(config).publish });
 }
 
 function recordFeedback(positionals, options) {
@@ -294,12 +302,17 @@ export async function discoveryCommand(args) {
   const definitions = {
     run: { engine: { type: "string" }, model: { type: "string" }, timezone: { type: "string" }, date: { type: "string" }, "research-file": { type: "string" } },
     status: {}, feedback: { reason: { type: "string" } },
+    export: { date: { type: "string" }, publish: { type: "boolean" } },
     schedule: { at: { type: "string" }, engine: { type: "string" }, timezone: { type: "string" }, install: { type: "boolean" } },
   };
   if (args.includes("--help")) { console.log(HELP); return; }
   if (!definitions[action]) throw new Error(HELP);
   const { values, positionals } = parseArgs({ args, options: definitions[action], allowPositionals: action === "feedback" });
   if (action === "run") await runDiscovery(values);
+  if (action === "export") {
+    const config = readJson(join(directory, "config.json"));
+    exportReading({ day: validDay(values.date ?? dayIn(config.timezone)), config, publish: values.publish ?? false });
+  }
   if (action === "feedback") recordFeedback(positionals, values);
   if (action === "schedule") schedule(values);
   if (action === "status") console.log(JSON.stringify({ history, batches: batches(), feedback: feedback(), schedule: existsSync(join(state, "schedule.json")) ? readJson(join(state, "schedule.json")) : null }, null, 2));
