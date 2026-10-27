@@ -49,7 +49,7 @@ console.log(JSON.stringify(value));\n`, { mode: 0o755 });
     return path;
   };
   const run = (...args) => exec(process.execPath, [join(factory, "sprowi/cli.mjs"), "discover", ...args]);
-  return { root, factory, remote, metadata, calls, git, exec, configure, archive, run, close: () => rmSync(root, { recursive: true, force: true }) };
+  return { root, factory, remote, metadata, calls, git, exec, configure, archive, run, close: () => rmSync(root, { recursive: true, force: true, maxRetries: 5 }) };
 }
 
 test("GIVEN complete batches WHEN exporting readings THEN linked ranked editions preserve earlier dates, findings and the raw private archive", () => {

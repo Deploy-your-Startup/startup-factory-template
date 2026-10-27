@@ -78,7 +78,9 @@ test("GIVEN a generated factory with owner data WHEN previewing and applying the
     mkdirSync(privateHistory, { recursive: true });
     writeFileSync(join(privateHistory, "owner-note.txt"), "Private decisions survive updates\n");
     mkdirSync(join(factory, "discovery/2025-01-01"), { recursive: true });
-    writeFileSync(join(factory, "discovery/2025-01-01/README.md"), "Owner reading edition\n");
+    // Reading exports wrap source URLs in angle brackets, as CommonMark allows.
+    const edition = "Owner reading edition\n\n[Source 1](<https://news.ycombinator.com/item?id=50193416>)\n";
+    writeFileSync(join(factory, "discovery/2025-01-01/README.md"), edition);
     writeFileSync(join(factory, "owner-notes.md"), "Only this instance\n");
     writeFileSync(join(factory, "README.md"), readFileSync(join(factory, "README.md"), "utf8") + "\nOwner customization.\n");
     const projectSettings = join(factory, "sprowi/projects/startup-factory.json");
@@ -115,13 +117,15 @@ test("GIVEN a generated factory with owner data WHEN previewing and applying the
     assert.equal(readFileSync(projectSettings, "utf8"), JSON.stringify(ownerSettings));
     assert.equal(readFileSync(discoveryConfig, "utf8"), JSON.stringify(discovery));
     assert.equal(readFileSync(join(privateHistory, "owner-note.txt"), "utf8"), "Private decisions survive updates\n");
-    assert.equal(readFileSync(join(factory, "discovery/2025-01-01/README.md"), "utf8"), "Owner reading edition\n");
+    assert.equal(readFileSync(join(factory, "discovery/2025-01-01/README.md"), "utf8"), edition);
     assert.match(readFileSync(join(factory, "README.md"), "utf8"), /Owner customization/);
     assert.match(readFileSync(join(factory, "README.md"), "utf8"), /new shared onboarding improvement/);
     assert.equal(readFileSync(join(factory, "owner-notes.md"), "utf8"), "Only this instance\n");
     assert.match(readFileSync(join(factory, ".copier-answers.yml"), "utf8"), /v1.1.0/);
     const checks = files(join(factory, "scripts/tests")).concat(files(join(factory, "sprowi")).filter((file) => file.endsWith(".integration.test.mjs")));
-    run(process.execPath, ["--test", ...checks], factory);
+    // Without the outer runner's context, the nested run reports and fails on its own.
+    const { NODE_TEST_CONTEXT, ...env } = process.env;
+    run(process.execPath, ["--test", ...checks], factory, { env });
   } finally { rmSync(temp, { recursive: true, force: true }); }
 });
 

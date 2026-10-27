@@ -51,7 +51,8 @@ function existsInRegistered(resolved) {
 
 function targets(text) {
   const prose = text.replace(/```[\s\S]*?```/g, "");
-  const links = [...prose.matchAll(/(?<!!)\[[^\]]*\]\(([^)\s]+)/g)].map((match) => match[1]);
+  // CommonMark destinations are either bare or wrapped in angle brackets.
+  const links = [...prose.matchAll(/(?<!!)\[[^\]]*\]\((?:<([^<>\n]*)>|([^)\s]+))/g)].map((match) => match[1] ?? match[2]);
   const imports = [...prose.matchAll(/^@(\S+)$/gm)].map((match) => match[1]);
   return [...links, ...imports];
 }
