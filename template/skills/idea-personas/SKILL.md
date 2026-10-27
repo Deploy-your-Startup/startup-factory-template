@@ -21,7 +21,10 @@ names what the smallest test must disprove. Only the experiment decides.
 
 ## The session
 
-1. Read the idea. If the owner did not name one, ask which.
+1. Read the idea. If the owner did not name one, ask which. When the idea is
+   for an existing startup, read its `projects/startups/<name>/docs/product.md`
+   first: argue from who it serves and what it does today, and say when the
+   idea contradicts that description.
 2. Name the three roles from `## Problem`. Keep them separate unless the idea
    truly makes them one person:
    - **User** — who has the problem and would use the product,
