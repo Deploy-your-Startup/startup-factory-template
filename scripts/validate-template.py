@@ -15,7 +15,7 @@ def main():
     if any(path.is_symlink() for path in source.rglob("*")):
         parser.error("template contains a symlink; review it before publishing")
     forbidden = {".git", ".env", ".sprowi-legacy", ".DS_Store"}
-    owner_roots = {"projects", "sprowi/tasks", "sprowi/runs", "sprowi/experiments", "sprowi/discovery/state"}
+    owner_roots = {"projects", "discovery", "sprowi/tasks", "sprowi/runs", "sprowi/experiments", "sprowi/discovery/state"}
     for path in source.rglob("*"):
         relative = path.relative_to(source)
         if any(part in forbidden for part in relative.parts) or any(
@@ -26,6 +26,9 @@ def main():
     config = json.loads((source / "sprowi/config.default.json").read_text())
     if config.get("publish", {}).get("app", {}).get("id"):
         parser.error("template contains an owner GitHub App ID")
+    reading = json.loads((source / "sprowi/discovery/config.json").read_text()).get("reading", {})
+    if reading.get("enabled") or reading.get("publish") or reading.get("repository"):
+        parser.error("template must not enable owner reading exports or configure a repository")
     print("Template contains no forbidden owner state or repository history.")
 
 

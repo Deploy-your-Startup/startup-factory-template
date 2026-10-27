@@ -136,6 +136,22 @@ for (const engine of ["claude", "codex"]) {
   });
 }
 
+test("GIVEN enabled reading export WHEN a new batch completes THEN the common run creates readable copies without changing the private archive", async () => {
+  const f = fixture();
+  try {
+    const path = join(f.factory, "sprowi/discovery/config.json"), config = JSON.parse(readFileSync(path, "utf8"));
+    config.reading = { enabled: true, publish: false };
+    writeFileSync(path, JSON.stringify(config)); f.git("add", "-A"); f.git("commit", "-qm", "enable local reading");
+    const result = await f.run(["run", "--date", "2026-01-01", "--research-file", f.research]);
+    assert.equal(result.status, 0, result.stdout + result.stderr);
+    assert.match(result.stdout, /DISCOVERY_READING/);
+    assert.match(readFileSync(join(f.factory, "discovery/README.md"), "utf8"), /Distinct customer problem 1/);
+    const archive = join(f.factory, "sprowi/discovery/state/history/2026-01-01");
+    assert.equal(JSON.parse(readFileSync(join(archive, "batch.json"), "utf8")).status, "complete");
+    assert.equal(readFileSync(join(f.factory, "discovery/2026-01-01/ideas/001-customer-1.md"), "utf8"), readFileSync(join(archive, "ideas/001-customer-1.md"), "utf8"));
+  } finally { f.close(); }
+});
+
 test("GIVEN a public source endpoint WHEN collecting research THEN retrieved text and source errors are archived and passed to the agent", async () => {
   const f = fixture();
   const server = createServer((_req, response) => response.end("<p>Owners complain about repeatedly copying the same information between incompatible tools.</p>"));

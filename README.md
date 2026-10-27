@@ -46,6 +46,11 @@ history. `scripts/sprowi.sh discover schedule` previews an optional macOS job;
 `--install` enables it after owner authorization. No Codex app is required for
 the Claude engine. See the generated [discovery guide](template/docs/sprowi.md#daily-discovery-with-claude-or-codex)
 for prerequisites, research-source limits and verification boundaries.
+An opt-in reading export creates a linked `discovery/` morning overview and
+dated proposals. It can commit and push those copies to the owner's explicitly
+configured private GitHub repository for reading on a phone, with the same
+workflow for Claude and Codex. Nothing is exported or published by default;
+see [reading editions](template/docs/sprowi.md#reading-the-ideas-away-from-your-computer).
 
 ## Update an existing factory
 

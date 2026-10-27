@@ -4,6 +4,11 @@
   "rounds": 2,
   "preferences": [],
   "excludedIdeas": [],
+  "reading": {
+    "enabled": false,
+    "publish": false,
+    "repository": ""
+  },
   "research": {
     "hackerNews": true,
     "storyLimit": 8,
