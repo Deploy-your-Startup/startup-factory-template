@@ -46,6 +46,9 @@ if(args[0]==='version'){console.log('local external boundary');process.exit(0);}
 if(args[0]==='create'&&args.includes('--help')){console.log(existsSync(${JSON.stringify(join(root, "old-sbx"))})?'old create flags':'--skills string');process.exit(0);}
 if(args[0]==='ls'){if(existsSync(${JSON.stringify(join(root, "deny-sbx"))})){console.error('synthetic login unavailable');process.exit(1);}console.log('[]');process.exit(0);}
 if(args[0]==='env'&&args[1]==='create'){
+ // Match the current external CLI: deprecated flags must not pass silently.
+ if(args.includes('--auto-approve')){console.error('error: unknown flag: --auto-approve');process.exit(2);}
+ if(!args.includes('--force')){console.error('non-interactive create requires --force');process.exit(2);}
  const values={};for(let i=0;i<args.length;i++)if(args[i]==='--env-arg'){const [k,...v]=args[++i].split('=');values[k]=v.join('=');}
  state[values.name]=values;writeFileSync(stateFile,JSON.stringify(state));process.exit(0);
 }
@@ -102,7 +105,7 @@ else{
 }
 
 for (const engine of ["claude", "codex"]) {
-  test(`GIVEN ${engine} and sourced research WHEN the real discovery CLI runs twice THEN one checked ranked batch is archived without changing source ideas`, async () => {
+  test(`GIVEN ${engine} and current sbx create flags WHEN the real discovery CLI runs twice THEN one checked ranked batch is archived without changing source ideas`, async () => {
     const f = fixture(engine);
     try {
       const first = await f.run(["run", "--date", "2026-01-01", "--research-file", f.research]);

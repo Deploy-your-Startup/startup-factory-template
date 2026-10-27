@@ -192,7 +192,7 @@ export async function runLoop({ projectName, taskDirectory, engineName, model, r
     // An SSH agent socket would be a way out of the microVM that nothing in
     // the run needs.
     const { SSH_AUTH_SOCK: _ignored, ...environmentWithoutSshAgent } = process.env;
-    const create = run("sbx", ["env", "create", "--auto-approve", ...environment], {
+    const create = run("sbx", ["env", "create", "--force", ...environment], {
       env: environmentWithoutSshAgent,
       allowFailure: true,
     });
