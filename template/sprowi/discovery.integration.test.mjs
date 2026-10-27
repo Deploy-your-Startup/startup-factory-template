@@ -19,7 +19,9 @@ function fixture(engine = "claude") {
   for (const name of ["sprowi.sh", "check-ideas.mjs"]) cpSync(new URL(`scripts/${name}`, source), join(factory, "scripts", name));
   writeFileSync(join(factory, "projects.yaml"), "projects: []\ntooling: []\n");
   writeFileSync(join(factory, "VISION.md"), "Test ideas with users before building.\n");
-  writeFileSync(join(factory, ".gitignore"), "/sprowi/runs/\n/sprowi/discovery/state/\n");
+  writeFileSync(join(factory, ".gitignore"), "/sprowi/runs/\n/sprowi/discovery/state/\n/projects/\n");
+  mkdirSync(join(factory, "projects/startups/board-club/docs"), { recursive: true });
+  writeFileSync(join(factory, "projects/startups/board-club/docs/product.md"), "# board-club product\n\n## What it is\n\nFriends draw one board game a month.\n");
   const configPath = join(factory, "sprowi/config.default.json");
   const config = JSON.parse(readFileSync(configPath, "utf8"));
   config.engine = engine;
@@ -120,6 +122,7 @@ for (const engine of ["claude", "codex"]) {
       assert.equal(f.git("status", "--porcelain"), "", "Daily inputs and results must all remain private and gitignored.");
       const calls = readFileSync(join(f.root, "prompts.log"), "utf8");
       assert.match(calls, /NEW markets are allowed/); assert.match(calls, /Provided research is supplied evidence/);
+      assert.match(calls, /"project": "board-club"/); assert.match(calls, /Friends draw one board game a month/);
       const again = await f.run(["run", "--date", "2026-01-01", "--research-file", f.research]);
       assert.equal(again.status, 0); assert.match(again.stdout, /Already complete/);
       assert.equal(readFileSync(join(f.root, "prompts.log"), "utf8"), calls);

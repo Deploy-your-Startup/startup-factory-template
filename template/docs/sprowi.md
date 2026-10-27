@@ -223,7 +223,10 @@ scripts/sprowi.sh ideas --for example-app        # ideas for one that exists
 scripts/sprowi.sh ideas --for example-app --publish --model claude-sonnet-5-5
 ```
 
-The brief is generated rather than hand-written, so asking is one command. The
+The brief is generated rather than hand-written, so asking is one command. With
+`--for`, the brief includes the startup's `docs/product.md`, the owner's
+description of what it is, whom it serves and what it does today; the
+application templates seed that file. The
 task directory it writes stays behind, so a brief that produced something good
 can be edited and run again. A hand-written brief is an ordinary task: write it
 under `sprowi/tasks/startup-factory/` and use `run`.
@@ -249,8 +252,8 @@ checkout are required. The CLI never switches providers or runs an unsandboxed
 agent when a prerequisite fails. Failed attempts remain available for diagnosis.
 
 Each run collects dated public research on the host, passes the research,
-preferences, explicit feedback, archived proposals and recorded experiment data
-to the existing sandbox loop, and archives three ranked ideas with its reviewer
+preferences, explicit feedback, archived proposals, recorded experiment data and
+each startup's `docs/product.md` to the existing sandbox loop, and archives three ranked ideas with its reviewer
 verdict. A task-specific reviewer allows new markets. The host checks that only
 three new idea files were added, each cites supplied evidence, all required
 sections exist, ranks are unique, and titles do not repeat archived proposals.

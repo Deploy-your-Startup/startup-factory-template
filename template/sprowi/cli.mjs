@@ -14,7 +14,7 @@ import {
 } from "node:fs";
 import { join, resolve } from "node:path";
 import { parseArgs } from "node:util";
-import { ENGINES, hubRoot, loadConfig, readJson, registryProjects, resolveEngine, resolveProject, supportsSandboxSkillIsolation } from "./lib.mjs";
+import { ENGINES, hubRoot, loadConfig, productDescriptions, readJson, registryProjects, resolveEngine, resolveProject, supportsSandboxSkillIsolation } from "./lib.mjs";
 import { evaluateSelectedIdea, experimentDirectory, makeIdeaTask, selectIdea } from "./experiment.mjs";
 
 const USAGE = `Sprowi · your startup companion
@@ -187,11 +187,15 @@ Read \`ideas/\` first and propose nothing that is already there.
 `;
 
   if (project) {
+    const product = productDescriptions().find((entry) => entry.project === project)?.product;
+    const description = product
+      ? `## The product today\n\nFrom \`projects/startups/${project}/docs/product.md\`, the owner's own description:\n\n${product.trim()}\n\n`
+      : `## The product today\n\n${project} has no \`docs/product.md\` yet. Say which ideas rest on guesses about its audience and features.\n\n`;
     return `# Task
 
 Propose three ideas for ${project} and write each one to its own file in \`ideas/\`.
 
-## Where to look first
+${description}## Where to look first
 
 - \`projects/startups/${project}/\` — its README, its AGENTS.md, and the code
   itself: what it does, who it is for, what is already built

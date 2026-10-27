@@ -3,7 +3,7 @@
 // the host and inside a sandbox, so it may not touch anything host-specific.
 
 import { spawnSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { basename, join, resolve } from "node:path";
 
 export const ENGINES = ["claude", "codex", "opencode", "copilot"];
@@ -40,6 +40,19 @@ export function registryProjects(root = hubRoot) {
       const [name, repo, deployed, kubectlContext] = line.split("\t");
       return { name, repo, deployed: deployed === "true", kubectlContext };
     });
+}
+
+// Each startup describes itself in docs/product.md (seeded by the application
+// templates). Idea runs cannot see projects/ inside the sandbox, so the host
+// passes these descriptions along. Read from disk rather than the registry, so
+// a checkout without a description is simply absent.
+export function productDescriptions(root = hubRoot) {
+  const startups = join(root, "projects/startups");
+  if (!existsSync(startups)) return [];
+  return readdirSync(startups).sort().flatMap((project) => {
+    const path = join(startups, project, "docs/product.md");
+    return existsSync(path) ? [{ project, product: readFileSync(path, "utf8").slice(0, 6000) }] : [];
+  });
 }
 
 export function resolveProject(name, root = hubRoot) {
