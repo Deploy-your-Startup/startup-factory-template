@@ -44,6 +44,7 @@ test("GIVEN an empty registry and Codex WHEN init runs THEN the real CLI install
     assert.equal(bundled.status, 0, bundled.stderr);
     assert.equal(readFileSync(join(directory, ".agents/skills/deploy-your-startup/SKILL.md"), "utf8"), bundled.stdout);
     assert.match(readFileSync(calls, "utf8"), /^--yes skills add .*--skill sprowi-task /);
+    assert.match(readFileSync(calls, "utf8"), /--skill idea-personas /);
     assert.doesNotMatch(readFileSync(calls, "utf8"), /spawn-startup|deploy-your-startup/);
     assert.match(result.stdout, /Done! Projects are in/);
   } finally {

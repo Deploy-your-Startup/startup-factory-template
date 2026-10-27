@@ -19,8 +19,19 @@ function throwawayHub() {
   writeFileSync(join(hub, "projects.yaml"), "projects:\n  - name: demo-startup\n    repo: git@github.com:example/demo-startup.git\n");
   mkdirSync(join(hub, "projects/startups/demo-startup"), { recursive: true });
   mkdirSync(join(hub, "ideas"));
-  writeFileSync(join(hub, "ideas/001-demo.md"), "# Demo idea\n\n## Problem\n\nCreators lose track of shared links.\n");
+  writeFileSync(join(hub, "ideas/001-demo.md"), demoIdea("test — creators are reachable and the objection is testable"));
   return hub;
+}
+
+function demoIdea(verdict) {
+  return [
+    "# Demo idea", "", "## Problem", "", "Creators lose track of shared links.", "",
+    "## Personas", "",
+    "- **User:** newsletter creators — today: spreadsheets — no because: one more tool — find them: creator forums",
+    "- **Buyer:** same as user",
+    "- **Payer:** nobody yet",
+    `- **Verdict:** ${verdict}`, "",
+  ].join("\n");
 }
 
 function sprowi(hub, ...args) {
@@ -63,6 +74,35 @@ test("GIVEN a selected idea WHEN its experiment plan is incomplete THEN Sprowi r
     const refused = sprowi(hub, "new", "demo-startup", "measure-links", "--experiment", "demo");
     assert.notEqual(refused.status, 0);
     assert.match(refused.stderr + refused.stdout, /distribution/);
+  } finally {
+    rmSync(hub, { recursive: true, force: true });
+  }
+});
+
+test("GIVEN an idea without a test verdict from its personas WHEN selecting it THEN Sprowi refuses to create an experiment", () => {
+  const hub = throwawayHub();
+  try {
+    writeFileSync(join(hub, "ideas/002-bare.md"), "# Bare idea\n\n## Problem\n\nCreators lose track of shared links.\n");
+    const bare = sprowi(hub, "select", "ideas/002-bare.md", "bare");
+    assert.notEqual(bare.status, 0);
+    assert.match(bare.stderr, /idea-personas/);
+
+    writeFileSync(join(hub, "ideas/003-dropped.md"), demoIdea("drop — nobody would pay"));
+    const dropped = sprowi(hub, "select", "ideas/003-dropped.md", "dropped");
+    assert.notEqual(dropped.status, 0);
+    assert.match(dropped.stderr, /"drop", not "test"/);
+    assert.deepEqual(readdirSync(join(hub, "sprowi")).filter((name) => name === "experiments"), []);
+  } finally {
+    rmSync(hub, { recursive: true, force: true });
+  }
+});
+
+test("GIVEN an idea its personas judged worth testing WHEN selecting it THEN the plan starts from the user persona", () => {
+  const hub = throwawayHub();
+  try {
+    assert.equal(sprowi(hub, "select", "ideas/001-demo.md", "demo").status, 0);
+    const spec = JSON.parse(readFileSync(join(hub, "sprowi/experiments/demo/experiment.json"), "utf8"));
+    assert.match(spec.audience, /^newsletter creators — today: spreadsheets/);
   } finally {
     rmSync(hub, { recursive: true, force: true });
   }

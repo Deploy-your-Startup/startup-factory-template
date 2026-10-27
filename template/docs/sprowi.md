@@ -129,15 +129,20 @@ Everything not listed in `acceptanceCommands` is invisible to the loop.
 ### Testing a startup idea
 
 The first vertical slice keeps the decision separate from the implementation.
-Select one Markdown idea from `ideas/` (or a local copy of an idea still in a
-pull request):
+First judge the idea with the `idea-personas` skill: a short session that names
+its user, buyer and payer, where to find them and why each would say no, and
+ends in a `test`, `sharpen` or `drop` verdict in the idea's `## Personas`
+section. Personas are hypotheses that sharpen the test, never evidence of
+demand. Then select one Markdown idea from `ideas/` whose verdict is `test` (or
+a local copy of an idea still in a pull request):
 
 ```bash
 scripts/sprowi.sh select ideas/001-link-analytics.md link-analytics
 ```
 
 This copies the idea to `sprowi/experiments/link-analytics/` and creates
-`experiment.json` and `observation.json`. Complete the experiment before
+`experiment.json`, with the user persona as its audience, and `observation.json`.
+It refuses an idea without personas or with another verdict. Complete the experiment before
 building: hypothesis, target audience, a concrete distribution route, one
 observable action, its data source, minimum sample, success/failure thresholds,
 and measurement window. `unit` is `count` or `ratio`; ratio thresholds use
