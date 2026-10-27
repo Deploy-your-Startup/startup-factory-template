@@ -14,16 +14,38 @@ export function experimentDirectory(slug) {
   return join(root, slug);
 }
 
+// The idea-personas skill writes this section. An idea becomes an experiment
+// only once its user, buyer and payer are named and the verdict is "test".
+const ROLES = ["User", "Buyer", "Payer", "Verdict"];
+
+export function readPersonas(text) {
+  const section = /^## Personas[ \t]*\n([\s\S]*?)(?=^## |(?![\s\S]))/m.exec(text)?.[1];
+  if (section === undefined) {
+    throw new Error("The idea has no `## Personas` section. Judge it with the idea-personas skill first.");
+  }
+  const personas = {};
+  for (const role of ROLES) {
+    const value = new RegExp(`^- \\*\\*${role}:\\*\\*(.*)$`, "m").exec(section)?.[1]?.trim();
+    if (!value) throw new Error(`\`## Personas\` needs a \`- **${role}:**\` line.`);
+    personas[role.toLowerCase()] = value;
+  }
+  const verdict = /^(test|sharpen|drop)\b/i.exec(personas.verdict)?.[1]?.toLowerCase();
+  if (!verdict) throw new Error("The persona verdict must start with test, sharpen or drop.");
+  if (verdict !== "test") throw new Error(`The persona verdict is "${verdict}", not "test": ${personas.verdict}`);
+  return personas;
+}
+
 export function selectIdea(source, slug) {
   const idea = resolve(source);
   if (!existsSync(idea)) throw new Error(`Idea file does not exist: ${idea}`);
+  const personas = readPersonas(readFileSync(idea, "utf8"));
   const directory = experimentDirectory(slug);
   if (existsSync(directory)) throw new Error(`Experiment already exists: ${directory}`);
   mkdirSync(directory, { recursive: true });
   copyFileSync(idea, join(directory, "idea.md"));
   writeFileSync(join(directory, "experiment.json"), `${JSON.stringify({
     hypothesis: "",
-    audience: "",
+    audience: personas.user,
     distribution: "",
     window: { start: null, end: null },
     primaryKpi: {

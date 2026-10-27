@@ -8,5 +8,10 @@ enforced by `scripts/check-ideas.mjs`, which is also what verifies a Sprowi run:
 - `## Smallest test` — the cheapest thing that would tell you, in days
 - `## Assumption` — what could turn out false, with a number or a condition
 
+Before an idea becomes an experiment, the `idea-personas` skill judges it
+through its user, buyer and payer and adds a `## Personas` section ending in a
+verdict. `scripts/sprowi.sh select` only accepts ideas whose verdict is `test`.
+Personas are hypotheses that sharpen the test, never evidence of demand.
+
 Nothing here is a commitment. An idea earns a spike by having an assumption
 worth testing, not by being written down.

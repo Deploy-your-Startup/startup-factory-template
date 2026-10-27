@@ -109,7 +109,7 @@ fi
 echo "Installing startup-factory skills..."
 
 if command -v npx &>/dev/null; then
-  for skill in sprowi-task; do
+  for skill in sprowi-task idea-personas; do
     echo -n "  ⟳ $skill — installing... "
     if npx --yes skills add "$root_dir" --skill "$skill" -a claude-code -a codex -a opencode --copy -y >/dev/null 2>&1; then
       echo -e "${GREEN}done${NC}"
