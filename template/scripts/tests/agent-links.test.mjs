@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -12,13 +12,14 @@ const root = fileURLToPath(new URL("../../", import.meta.url));
 // Markdown inside registered repositories is checked by those repositories.
 const skipped = new Set([".git", "node_modules", "projects", ".venv", "experiments"]);
 
+// Gitignored files are private run state, such as research text in discovery
+// attempts, whose links point nowhere in this workspace.
 function markdown(directory) {
-  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
-    if (skipped.has(entry.name)) return [];
-    const path = join(directory, entry.name);
-    if (entry.isDirectory()) return markdown(path);
-    return entry.name.endsWith(".md") ? [path] : [];
-  });
+  const files = execFileSync("git", ["-C", directory, "ls-files", "-z", "--cached", "--others", "--exclude-standard", "--", "*.md"], { encoding: "utf8" });
+  return [...new Set(files.split("\0").filter(Boolean))]
+    .filter((file) => !file.split("/").some((part) => skipped.has(part)))
+    .map((file) => join(directory, file))
+    .filter((path) => existsSync(path));
 }
 
 // A link into a registered repository must resolve in its checkout or, when it
