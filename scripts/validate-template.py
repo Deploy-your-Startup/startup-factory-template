@@ -26,9 +26,11 @@ def main():
     config = json.loads((source / "sprowi/config.default.json").read_text())
     if config.get("publish", {}).get("app", {}).get("id"):
         parser.error("template contains an owner GitHub App ID")
-    reading = json.loads((source / "sprowi/discovery/config.json").read_text()).get("reading", {})
-    if reading.get("enabled") or reading.get("publish") or reading.get("repository"):
-        parser.error("template must not enable owner reading exports or configure a repository")
+    discovery = json.loads((source / "sprowi/discovery/config.json").read_text())
+    publish = discovery.get("publish", {})
+    reading = discovery.get("reading", {})
+    if publish.get("enabled") or publish.get("repository") or reading.get("publish") or reading.get("repository"):
+        parser.error("template must not enable owner idea publication or configure a repository")
     print("Template contains no forbidden owner state or repository history.")
 
 

@@ -4,9 +4,8 @@
   "rounds": 2,
   "preferences": [],
   "excludedIdeas": [],
-  "reading": {
+  "publish": {
     "enabled": false,
-    "publish": false,
     "repository": ""
   },
   "research": {

@@ -253,10 +253,10 @@ agent when a prerequisite fails. Failed attempts remain available for diagnosis.
 
 Each run collects dated public research on the host, passes the research,
 preferences, explicit feedback, archived proposals, recorded experiment data and
-each startup's `docs/product.md` to the existing sandbox loop, and archives three ranked ideas with its reviewer
-verdict. A task-specific reviewer allows new markets. The host checks that only
+each startup's `docs/product.md` to the existing sandbox loop, and adds three ranked ideas to `ideas/`
+with its reviewer verdict. A task-specific reviewer allows new markets. The host checks that only
 three new idea files were added, each cites supplied evidence, all required
-sections exist, ranks are unique, and titles do not repeat archived proposals.
+sections exist, ranks are unique, and titles do not repeat archived proposals or ideas.
 Semantic duplication and truthfulness still need the model review and owner
 judgment. Findings remain visible; structural checks do not validate demand.
 
@@ -278,7 +278,7 @@ thresholds must use the same behavior, eligible audience and time anchor and
 exclude owner/test traffic. Plans describe future deployment and its unknown
 costs/prerequisites; discovery itself never builds or deploys an application.
 Building, publishing, contacting people and spending still need owner approval.
-Existing completed archives retain their original content and remain exportable.
+Existing completed archives retain their original content and can still be filed.
 Existing owners should also review preferences that still defer all building,
 and the `Smallest test` rules in `sprowi/projects/startup-factory.review.md`
 used by the ordinary `ideas` command. Those owner-managed files survive updates;
@@ -307,87 +307,76 @@ characters) and `observedAt` (an ISO timestamp). Supplied evidence is labeled
 `provided`; the command does not pretend it fetched those pages. Missing sources
 stop the run rather than yielding invented evidence.
 
-Results live in the private, gitignored `sprowi/discovery/state/history/YYYY-MM-DD/`:
+The run's raw results live in the private, gitignored `sprowi/discovery/state/history/YYYY-MM-DD/`:
 three full ideas, `summary.md` with the favorite first, research, patch, verdict,
-usage and `batch.json`. The source `ideas/` directory is unchanged. Repeating a
-completed local date reuses its archive; a filesystem lock prevents concurrent
+usage and `batch.json`. Repeating a completed local date reuses its archive; a filesystem lock prevents concurrent
 model runs. Failures are retained under `state/attempts/` and may be retried.
 After an interrupted process, inspect `state/run.lock/owner.json` and confirm
 the process is no longer running before removing its stale lock.
 
-#### Reading the ideas away from your computer
+#### Where the ideas go
 
-Export an already completed batch as a GitHub-readable morning edition:
+`ideas/` is the one collection of ideas. After each successful run, the three
+proposals are added there under the next free numbers, so they never collide
+with hand-written ideas or earlier days, and are committed by path:
 
-```bash
-scripts/sprowi.sh discover export --date 2026-01-01
+```text
+Add startup discovery ideas 2026-01-01
+  ideas/004-example.md
 ```
 
-This creates `discovery/README.md` with the latest three ranked cards and links
-to all exported dates. `discovery/YYYY-MM-DD/README.md` contains the test,
-success/stop criteria, objections and review/research status; `ideas/` under
-that date contains unchanged copies of the three archived proposals. No model
-call or sandbox is needed for an export. Report labels are English; proposal
-content retains the configured discovery language. Source headings remain the
-shared idea format. Raw research, feedback, usage and engine logs stay local.
-The `discovery/` copies are tracked files, so review them before sharing.
-When a proposal has `Web experiment`, the overview and dated edition also show
-that planned web flow and deployment path. Older proposals without it retain
-their original rendering; an export never invents a web plan for an old idea.
+The next run patches against `HEAD` and needs a clean checkout, which is why the
+host commits them; other owner changes are neither staged nor committed. Each
+file keeps the shared idea format plus the discovery sections; only the batch's
+`## Rank` is left out, because it only ordered one day. A filed proposal is an
+ordinary idea: judge it with `idea-personas`, then `select` it. Report labels
+are English; proposal content retains the configured discovery language.
+Research, feedback, usage and engine logs stay local.
 
-Enable this after every successful `discover run` in the owner-managed
-`sprowi/discovery/config.json`:
+Repeating a date files nothing twice: `batch.json` records each proposal's
+`filedAs` name, and a title already in `ideas/` counts as filed. To file a
+completed batch again after a failure, or one from before this behaviour:
+
+```bash
+scripts/sprowi.sh discover file --date 2026-01-01
+```
+
+To also push those commits after every run, set this in the owner-managed
+`sprowi/discovery/config.json`, then commit and push the configuration:
 
 ```json
-"reading": {
+"publish": {
   "enabled": true,
-  "publish": false,
-  "repository": ""
+  "repository": "OWNER/REPO"
 }
 ```
 
-Existing configurations without `reading` and new factories both default to
-no export and no publication. With `enabled: true`, a reused completed date
-also refreshes the reading copies, without generating another batch. A failed
-or incomplete batch never replaces the latest edition; exporting an older date
-retains newer editions. This works with Claude, Codex and the other engines,
-including an external scheduler with no Codex app.
+The earlier `reading` setting still works: its `publish` and `repository` are
+used and `enabled` is ignored. `discover file --publish` publishes one batch
+without enabling future publication. GitHub CLI authentication with access to
+the repository is required. Before writing, the host checks that actual
+`origin` matches the configured repository, GitHub reports it private, the
+checkout is on its default branch, the worktree/index are clean, and local HEAD
+equals the remote branch. It commits only the new idea files and uses a normal
+push. No changes means no new commit. Public/other repositories, denied access,
+staged/untracked owner changes and unpushed commits stop the operation. There
+is no stash, reset, rebase, force-push or conflict resolution. Symlinked
+input/output paths and invalid/incomplete archives are refused.
 
-For automatic commits and pushes, explicitly set `publish: true` and
-`repository` to the owner's private `OWNER/REPO`. Commit and push that
-configuration before the next run. To publish a single existing batch instead:
-
-```bash
-scripts/sprowi.sh discover export --date 2026-01-01 --publish
-```
-
-The explicit command also requires `reading.repository`; it does not enable
-future automatic publication. GitHub CLI authentication with access to that
-repository is required. Before writing, the host checks that actual `origin`
-matches the configured repository, GitHub reports it private, the checkout is
-on its default branch, the worktree/index are clean, and local HEAD equals
-the remote branch. It commits only the five generated reading files and uses
-a normal push. No changes means no new commit. Public/other repositories,
-denied access, staged/untracked owner changes and unpushed commits stop the
-operation. There is no stash, reset, rebase, force-push or conflict resolution.
-Symlinked input/output paths and invalid/incomplete archives are refused.
-
-If export or push fails, the successful private batch remains complete.
-Re-running its date retries export rather than the model. Review leftover
-reading files or a locally committed but unpushed edition yourself and restore
+If filing or the push fails, the successful private batch remains complete and
+a retry needs no model call. Push a locally committed batch yourself, or restore
 a clean, synchronized checkout before retrying; a racing remote push is not
 resolved automatically. Do not commit other work just to satisfy this check.
-`state/reading.lock/owner.json` identifies a concurrent/interrupted export;
+`state/filing.lock/owner.json` identifies a concurrent/interrupted filing;
 confirm that process has ended before removing a stale lock.
 
-Bookmark the repository's `discovery/` directory to read published editions on
-your phone while the computer is offline. Generation still requires the
-configured runner, Docker and engine credentials to be available; publication
-does not move generation to the cloud. These personal editions belong only to
-the owner's repository; template validation rejects a `template/discovery/`
-directory. Factory updates preserve the owner's reading configuration and files.
+Bookmark the repository's `ideas/` directory to read published ideas on your
+phone while the computer is offline. Generation still requires the configured
+runner, Docker and engine credentials; publication does not move generation to
+the cloud. Factories that used the earlier `discovery/` reading editions keep
+those files; once their ideas are filed, the directory can be deleted.
 
-Record a decision explicitly, using a filename from the archived batch:
+Record a decision explicitly, using the idea's filename in `ideas/` or the archived batch:
 
 ```bash
 scripts/sprowi.sh discover feedback 2026-01-01 001-example.md rejected \
@@ -397,7 +386,7 @@ scripts/sprowi.sh discover feedback 2026-01-01 001-example.md rejected \
 Decisions are `interesting`, `test` or `rejected`; a reason is required. They
 are appended to `state/feedback.jsonl` and enter future runs. Silence and model
 rankings are not approval. Selecting an idea for an experiment still uses
-`select` with its archived idea file; discovery never builds, publishes,
+`select` with its file in `ideas/`; discovery never builds, publishes,
 contacts users, buys domains or deploys.
 
 #### Optional local schedule
@@ -426,19 +415,20 @@ that supports Sprowi. A Codex automation should invoke that command and read
 the archived summary; it should not duplicate the prompts or enable a second
 local schedule. All engines share the pipeline, while research, decisions and
 history remain in the owner's workspace rather than the distributed template.
-With reading publication enabled, use the printed `READING_PUBLISHED` URL in
+With publication enabled, use the printed `IDEAS_PUBLISHED` URL in
 notifications. A chat automation should call the shared command and link the
-edition; do not duplicate the rendering, staging or publishing procedure in its
+new ideas; do not duplicate the filing, staging or publishing procedure in its
 prompt or enable a second scheduler.
 
 Coverage: `discovery.integration.test.mjs` exercises the real CLI, Git patches,
-source collection, persistence, feedback, date idempotency, duplicate rejection,
+source collection, persistence, filing into `ideas/`, feedback, date
+idempotency, duplicate rejection,
 denied sandbox access, invalid inputs, concurrency and schedule previews. Only
 the external VM, model executables and launchd service are local stand-ins.
 Those offline scenarios do not prove real sandbox isolation, paid-provider
 availability, model quality or an actual launchd wakeup. No browser UI is added.
-`discovery-reading.integration.test.mjs` additionally exercises the actual CLI,
-complete archives, symlink refusal, linked/date-ordered Markdown, real Git
+`discovery-ideas.integration.test.mjs` additionally exercises the actual CLI,
+complete archives, symlink refusal, numbering after hand-written ideas, real Git
 commits and pushes to a local bare origin, idempotency, matching/private-origin
 checks, denied GitHub access and protection of dirty worktrees. Only GitHub's
 metadata API is a local stand-in; live OAuth is a separate operator check.

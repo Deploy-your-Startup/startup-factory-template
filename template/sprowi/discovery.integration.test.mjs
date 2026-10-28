@@ -65,7 +65,7 @@ if(args[0]==='exec'){
 process.exit(98);
 `);
   const provider = `
-import {mkdirSync,readFileSync,writeFileSync,appendFileSync,existsSync} from 'node:fs';
+import {mkdirSync,readFileSync,readdirSync,writeFileSync,appendFileSync,existsSync} from 'node:fs';
 import {join} from 'node:path';
 const prompt=process.argv.slice(2).find(v=>v.includes('BEGIN TASK DOCUMENT'))||'';
 appendFileSync(${JSON.stringify(join(root, "prompts.log"))}, prompt+'\\n');
@@ -75,6 +75,8 @@ if(prompt.startsWith('Review')){
  writeFileSync(path,JSON.stringify({pass:true,findings:[],scenarios:[]}));
 }else{
  mkdirSync('ideas',{recursive:true});
+ const used=readdirSync('ideas').map(n=>Number(n.slice(0,3))).filter(Number.isFinite);
+ const reuse=existsSync(${JSON.stringify(join(root, "reuse-numbers"))}), base=reuse?0:Math.max(0,...used);
  const duplicate=existsSync(${JSON.stringify(join(root, "duplicate-rank"))});
  for(let i=1;i<=3;i++){
   let text='# Distinct customer problem '+i+'\\n';
@@ -84,7 +86,7 @@ if(prompt.startsWith('Review')){
    text+='\\n## '+h+'\\n\\n'+(h==='Web experiment'?'A small web app takes one input and returns a useful result. Use the supported Factory template and deploy with startup after owner approval, then share the URL through a permitted audience channel. Record core_action_completed for eligible visitors.':'If at least five of ten eligible visitors complete the core action in the web app within three days, test customer problem '+i+'. Source: https://example.invalid/evidence')+'\\n';
   }
   text+='\\n## Rank\\n\\n'+(duplicate?1:i)+'\\n';
-  writeFileSync('ideas/00'+i+'-customer-'+i+'.md',text);
+  writeFileSync('ideas/'+String(base+i).padStart(3,'0')+'-customer-'+i+'.md',text);
  }
 }
 
@@ -134,14 +136,14 @@ test("GIVEN proposals with no Web experiment WHEN discovery reviews and archives
     assert.equal(result.status, 1, result.stdout + result.stderr);
     assert.match(result.stderr, /missing or thin Web experiment/);
     assert.equal(existsSync(join(f.factory, "sprowi/discovery/state/history/2026-01-01/batch.json")), false);
-    assert.equal(existsSync(join(f.factory, "discovery")), false);
+    assert.equal(existsSync(join(f.factory, "ideas")), false);
     const attempts = join(f.factory, "sprowi/discovery/state/attempts");
     assert.equal(JSON.parse(readFileSync(join(attempts, readdirSync(attempts)[0], "attempt.json"), "utf8")).status, "failed");
   } finally { f.close(); }
 });
 
 for (const engine of ["claude", "codex"]) {
-  test(`GIVEN ${engine} and current sbx create flags WHEN the real discovery CLI runs twice THEN one checked ranked batch is archived without changing source ideas`, async () => {
+  test(`GIVEN ${engine} and current sbx create flags WHEN the real discovery CLI runs twice THEN one checked ranked batch is archived and filed into ideas/ once`, async () => {
     const f = fixture(engine);
     try {
       const first = await f.run(["run", "--date", "2026-01-01", "--research-file", f.research]);
@@ -152,8 +154,10 @@ for (const engine of ["claude", "codex"]) {
       assert.deepEqual(batch.ideas.map((idea) => idea.rank), [1, 2, 3]);
       for (const name of ["research.json", "result.patch", "result.json", "usage.json", "summary.md"]) assert.ok(existsSync(join(archive, name)));
       assert.equal(readdirSync(join(archive, "ideas")).length, 3);
-      assert.equal(existsSync(join(f.factory, "ideas")), false);
-      assert.equal(f.git("status", "--porcelain"), "", "Daily inputs and results must all remain private and gitignored.");
+      assert.deepEqual(readdirSync(join(f.factory, "ideas")).sort(), ["001-customer-1.md", "002-customer-2.md", "003-customer-3.md"]);
+      assert.doesNotMatch(readFileSync(join(f.factory, "ideas/001-customer-1.md"), "utf8"), /## Rank/);
+      assert.equal(f.git("status", "--porcelain"), "", "Filed ideas are committed; inputs and results stay private and gitignored.");
+      assert.match(f.git("log", "-1", "--format=%s"), /Add startup discovery ideas 2026-01-01/);
       const calls = readFileSync(join(f.root, "prompts.log"), "utf8");
       assert.match(calls, /NEW markets are allowed/); assert.match(calls, /Provided research is supplied evidence/);
       assert.match(calls, /## Web experiment/);
@@ -164,12 +168,13 @@ for (const engine of ["claude", "codex"]) {
       const again = await f.run(["run", "--date", "2026-01-01", "--research-file", f.research]);
       assert.equal(again.status, 0); assert.match(again.stdout, /Already complete/);
       assert.equal(readFileSync(join(f.root, "prompts.log"), "utf8"), calls);
+      assert.equal(readdirSync(join(f.factory, "ideas")).length, 3, "A repeated date files nothing twice.");
       const decision = await f.run(["feedback", "2026-01-01", batch.ideas[0].file, "rejected", "--reason", "Cannot reach these customers"]);
       assert.equal(decision.status, 0, decision.stderr);
       const invalid = await f.run(["feedback", "2026-01-01", "../escape", "test", "--reason", "bad"]);
       assert.equal(invalid.status, 1); assert.match(invalid.stderr, /Unknown idea/);
       const next = await f.run(["run", "--date", "2026-01-02", "--research-file", f.research]);
-      assert.equal(next.status, 1); assert.match(next.stderr, /duplicate archived idea/);
+      assert.equal(next.status, 1); assert.match(next.stderr, /same idea already exists/);
       const prompts = readFileSync(join(f.root, "prompts.log"), "utf8");
       assert.match(prompts, /Cannot reach these customers/); assert.match(prompts, /Distinct customer problem 1/);
       assert.equal(existsSync(join(f.factory, "sprowi/discovery/state/run.lock")), false);
@@ -177,21 +182,24 @@ for (const engine of ["claude", "codex"]) {
   });
 }
 
-test("GIVEN enabled reading export WHEN a new batch completes THEN the common run creates readable copies without changing the private archive", async () => {
+test("GIVEN a hand-written idea WHEN a new batch completes THEN discovery files its ideas under the next free numbers", async () => {
   const f = fixture();
   try {
-    const path = join(f.factory, "sprowi/discovery/config.json"), config = JSON.parse(readFileSync(path, "utf8"));
-    config.reading = { enabled: true, publish: false };
-    writeFileSync(path, JSON.stringify(config)); f.git("add", "-A"); f.git("commit", "-qm", "enable local reading");
+    // The fake model reuses numbers 001-003 and ignores the existing idea 005.
+    writeFileSync(join(f.root, "reuse-numbers"), "ignore existing numbers");
+    mkdirSync(join(f.factory, "ideas"));
+    const hand = "# A hand-written idea\n" + ["Problem", "Smallest test", "Assumption"].map((h) => `\n## ${h}\n\nIf at least three club members use the shared calendar within a week, keep going.\n`).join("");
+    writeFileSync(join(f.factory, "ideas/005-hand-written.md"), hand);
+    f.git("add", "-A"); f.git("commit", "-qm", "hand-written idea");
     const result = await f.run(["run", "--date", "2026-01-01", "--research-file", f.research]);
     assert.equal(result.status, 0, result.stdout + result.stderr);
-    assert.match(result.stdout, /DISCOVERY_READING/);
-    assert.match(readFileSync(join(f.factory, "discovery/README.md"), "utf8"), /Distinct customer problem 1/);
-    assert.match(readFileSync(join(f.factory, "discovery/README.md"), "utf8"), /\*\*Web experiment:\*\*/);
-    assert.match(readFileSync(join(f.factory, "discovery/2026-01-01/README.md"), "utf8"), /core_action_completed/);
-    const archive = join(f.factory, "sprowi/discovery/state/history/2026-01-01");
-    assert.equal(JSON.parse(readFileSync(join(archive, "batch.json"), "utf8")).status, "complete");
-    assert.equal(readFileSync(join(f.factory, "discovery/2026-01-01/ideas/001-customer-1.md"), "utf8"), readFileSync(join(archive, "ideas/001-customer-1.md"), "utf8"));
+    assert.match(result.stdout, /DISCOVERY_IDEA 1 .*006-customer-1\.md/);
+    assert.deepEqual(readdirSync(join(f.factory, "ideas")).sort(), ["005-hand-written.md", "006-customer-1.md", "007-customer-2.md", "008-customer-3.md"]);
+    assert.equal(readFileSync(join(f.factory, "ideas/005-hand-written.md"), "utf8"), hand);
+    const batch = JSON.parse(readFileSync(join(f.factory, "sprowi/discovery/state/history/2026-01-01/batch.json"), "utf8"));
+    assert.deepEqual(batch.ideas.map((idea) => idea.filedAs), ["006-customer-1.md", "007-customer-2.md", "008-customer-3.md"]);
+    const decision = await f.run(["feedback", "2026-01-01", "007-customer-2.md", "interesting", "--reason", "Reachable through a club"]);
+    assert.equal(decision.status, 0, decision.stderr);
   } finally { f.close(); }
 });
 

@@ -23,7 +23,7 @@ const USAGE = `Sprowi · your startup companion
   scripts/sprowi.sh new  <project> <slug>       scaffold a task directory
   scripts/sprowi.sh ideas [--for <project>]     write a brief and run it: ideas for
                                               one startup, or for new ones
-  scripts/sprowi.sh discover [run|status|export|feedback|schedule]
+  scripts/sprowi.sh discover [run|status|file|feedback|schedule]
                                               research, review and archive daily startup bets
   scripts/sprowi.sh select <idea.md> <slug>    select an idea and create its experiment plan
   scripts/sprowi.sh evaluate <slug>           evaluate the recorded KPI against the plan
@@ -360,7 +360,7 @@ try {
     const { githubSetup } = await import("./github-setup.mjs");
     await githubSetup({ name: values.name, org: values.org });
   } else if (command === "test") {
-    const result = spawnSync(process.execPath, ["--test", ...["publish", "experiment", "agent", "discovery", "discovery-reading"].map((name) => join(hubRoot, `sprowi/${name}.integration.test.mjs`))], { stdio: "inherit" });
+    const result = spawnSync(process.execPath, ["--test", ...["publish", "experiment", "agent", "discovery", "discovery-ideas"].map((name) => join(hubRoot, `sprowi/${name}.integration.test.mjs`))], { stdio: "inherit" });
     process.exit(result.status ?? 1);
   } else if (command === "doctor") {
     const { values } = parseArgs({ args: rest, options: { engine: { type: "string" } } });
