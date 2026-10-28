@@ -182,7 +182,7 @@ function archiveIdeas(result, target, report) {
     const oldTitles = new Set(batches().flatMap((batch) => (batch.ideas ?? []).map((idea) => idea.title.toLowerCase())));
     const ideas = changes.map((line) => {
       const file = line.split("\t")[1]; const text = readFileSync(join(scratch, file), "utf8");
-      for (const heading of ["Evidence", "Distribution", "If validated", "Why it might fail", "Rationale"]) {
+      for (const heading of ["Evidence", "Distribution", "Web experiment", "If validated", "Why it might fail", "Rationale"]) {
         if (section(text, heading).length < 40) throw new Error(`${file}: missing or thin ${heading}.`);
       }
       const citations = new Set((section(text, "Evidence").match(/https?:\/\/[^\s<>()\]]+/g) ?? []).map((url) => url.replace(/[.,;]+$/, "")));

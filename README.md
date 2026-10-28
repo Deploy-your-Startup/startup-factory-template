@@ -42,7 +42,11 @@ live verification. Sprowi is included but setup is optional:
 
 Sprowi includes daily startup discovery with either Claude or Codex: dated public
 research, three reviewed and ranked bets, explicit owner feedback and private
-history. `scripts/sprowi.sh discover schedule` previews an optional macOS job;
+history. Proposals focus on small websites and web apps with a useful first flow,
+a planned Factory deployment/distribution path and measurable real usage. The
+first test includes a small build; paper-only exercises are not the default.
+Discovery describes these plans and does not build or deploy them automatically.
+`scripts/sprowi.sh discover schedule` previews an optional macOS job;
 `--install` enables it after owner authorization. No Codex app is required for
 the Claude engine. See the generated [discovery guide](template/docs/sprowi.md#daily-discovery-with-claude-or-codex)
 for prerequisites, research-source limits and verification boundaries.

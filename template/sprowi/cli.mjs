@@ -176,12 +176,21 @@ the bet holds, and an assumption that could turn out false. Where a claim is a
 guess rather than something the portfolio has evidence for, say so plainly
 instead of asserting it.
 
+Prefer a small website or web app with one useful user flow. The first test
+can include up to three days of building, instrumentation and a planned Factory
+deployment, followed by sharing its URL with eligible users. Describe the core
+action, distribution and events for actual use, return visits or payment.
+Paper/PDF checklists, consulting or interviews alone are not the main test;
+checklists can be interactive product features. Landing-page interest alone is
+weaker evidence than product use or payment. Describe future work and unknown
+setup/costs; this idea run grants no permission to build, contact or deploy.
+
 Read \`ideas/\` first and propose nothing that is already there.
 
 ## Out of scope
 
-- Anything needing new infrastructure, a new service, or money spent before the
-  smallest test is done
+- Anything needing substantial infrastructure, a large service or an assumed
+  budget instead of a bounded first web experiment using the Factory
 - Rewrites, migrations and refactorings — those are tasks, not ideas
 - Ideas whose smallest test takes longer than a few days
 `;

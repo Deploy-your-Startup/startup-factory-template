@@ -260,6 +260,26 @@ sections exist, ranks are unique, and titles do not repeat archived proposals.
 Semantic duplication and truthfulness still need the model review and owner
 judgment. Findings remain visible; structural checks do not validate demand.
 
+Discovery proposes small websites and web apps that a solo owner can build,
+deploy and distribute with the Factory. Each new proposal includes a
+`## Web experiment` section: a useful core flow, scope cuts, supported template
+and planned deployment path, a route to put its URL in front of the first ten
+eligible people, and events measuring actual use, return visits or payment.
+The smallest test includes up to three days of building and instrumentation;
+the observation window is specified separately. It does not defer all building
+until after interviews, paper checklists or consulting. An interactive checklist
+can be a web feature. A landing page must make a clear offer with a meaningful
+action and acknowledge that interest alone is weaker than product use or payment.
+
+The generator and independent reviewer share this rule. The host refuses new
+batches without a substantive `Web experiment` section even if the model review
+passes; semantic quality still needs review and owner judgment. Metrics and
+thresholds must use the same behavior, eligible audience and time anchor and
+exclude owner/test traffic. Plans describe future deployment and its unknown
+costs/prerequisites; discovery itself never builds or deploys an application.
+Building, publishing, contacting people and spending still need owner approval.
+Existing completed archives retain their original content and remain exportable.
+
 `sprowi/discovery/config.json` is owner-managed and survives template updates.
 Set `language`, `timezone`, `preferences`, `excludedIdeas`, optional `engine`,
 `rounds` and `research.urls` there. URLs must be public read-only sources; never
@@ -305,6 +325,9 @@ call or sandbox is needed for an export. Report labels are English; proposal
 content retains the configured discovery language. Source headings remain the
 shared idea format. Raw research, feedback, usage and engine logs stay local.
 The `discovery/` copies are tracked files, so review them before sharing.
+When a proposal has `Web experiment`, the overview and dated edition also show
+that planned web flow and deployment path. Older proposals without it retain
+their original rendering; an export never invents a web plan for an old idea.
 
 Enable this after every successful `discover run` in the owner-managed
 `sprowi/discovery/config.json`:

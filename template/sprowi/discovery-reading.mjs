@@ -49,7 +49,7 @@ function section(text, name) {
 }
 
 function excerpt(text, limit = 320) {
-  const plain = String(text).replace(/\[([^\]]+)\]\([^)]+\)/g, "$1").replace(/https?:\/\/\S+/g, "").replace(/[*_`#<>]/g, "").replace(/\s+/g, " ").trim();
+  const plain = String(text).replace(/\[([^\]]+)\]\([^)]+\)/g, "$1").replace(/https?:\/\/\S+/g, "").replace(/[*`#<>]/g, "").replace(/\s+/g, " ").trim();
   return (plain.length > limit ? `${plain.slice(0, limit).trimEnd()}…` : plain).replace(/[\\[\]|]/g, "\\$&");
 }
 
@@ -78,6 +78,8 @@ function sources(text) {
 
 function card(idea, prefix, detailed = false) {
   let text = `### ${idea.rank}. ${excerpt(idea.title, 180)}\n\n${excerpt(section(idea.text, "Problem"), 360)}\n\n`;
+  const web = section(idea.text, "Web experiment");
+  if (web) text += `**Web experiment:** ${excerpt(web, detailed ? 1800 : 500)}\n\n`;
   if (detailed) text += `**First ten participants:** ${excerpt(section(idea.text, "Distribution"), 900)}\n\n`;
   text += `**Smallest test:** ${excerpt(section(idea.text, "Smallest test"), detailed ? 1400 : 300)}\n\n`;
   if (detailed) text += `**Success / stop criteria:** ${excerpt(section(idea.text, "Assumption"), 1800)}\n\n`;

@@ -61,6 +61,7 @@ test("GIVEN complete batches WHEN exporting readings THEN linked ranked editions
     const destination = join(f.factory, "discovery"), date = join(destination, "2026-01-01");
     assert.deepEqual(readdirSync(date).sort(), ["README.md", "ideas"]);
     const report = readFileSync(join(date, "README.md"), "utf8");
+    assert.doesNotMatch(report, /\*\*Web experiment:\*\*/, "Legacy editions remain readable without a web plan.");
     assert.match(report, /First ten participants/); assert.match(report, /Success \/ stop criteria/);
     assert.match(report, /Demand is still uncertain/); assert.match(report, /Research errors: 1/);
     assert.doesNotMatch(report, /PRIVATE-RAW|PRIVATE-FEEDBACK/);
@@ -72,9 +73,14 @@ test("GIVEN complete batches WHEN exporting readings THEN linked ranked editions
         if (!match[1].startsWith("<https:")) assert.ok(existsSync(join(md, "..", match[1])), match[1]);
       }
     }
-    f.archive("2026-01-02"); assert.equal(f.run("export", "--date", "2026-01-02").status, 0);
+    const next = f.archive("2026-01-02");
+    const idea = join(next, "ideas/001-problem-1.md");
+    writeFileSync(idea, readFileSync(idea, "utf8") + "\n## Web experiment\n\nBuild an interactive website with one useful action, deploy through the Factory and record core_action_completed for eligible visitors.\n");
+    assert.equal(f.run("export", "--date", "2026-01-02").status, 0);
     const index = readFileSync(join(destination, "README.md"), "utf8");
     assert.match(index, /Latest · 2026-01-02/); assert.ok(index.indexOf("| [2026-01-02]") < index.indexOf("| [2026-01-01]"));
+    assert.match(index, /\*\*Web experiment:\*\*/); assert.match(index, /interactive website/);
+    assert.match(readFileSync(join(destination, "2026-01-02/README.md"), "utf8"), /core_action_completed/);
     assert.equal(f.run("export", "--date", "2026-01-01").status, 0);
     assert.equal(readFileSync(join(destination, "README.md"), "utf8"), index);
     assert.equal(existsSync(f.calls), false, "Local export must not call GitHub.");
