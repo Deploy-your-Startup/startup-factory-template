@@ -222,7 +222,12 @@ scripts/sprowi.sh ideas --engine codex --model gpt-5.5
 `ideas` is `discover run --fresh`: it collects research, runs the sandboxed
 loop with the discovery generator and reviewer, checks the files and adds them
 to `ideas/` under the next free numbers, committed and, with publication
-enabled, pushed. A day that already has a batch gets `2026-01-01-2`, `-3` and
+enabled, pushed. Each idea carries a `## Personas` section in the format the
+`idea-personas` skill writes: user, buyer and payer with today's workaround,
+main objection and where to find them, plus a `test` or `sharpen` verdict. The
+host refuses a batch without it or with a `drop` verdict. `select` accepts only
+`test`; challenge a `sharpen` (or any draft) with `idea-personas` first.
+Model-written personas are hypotheses, never evidence of demand. A day that already has a batch gets `2026-01-01-2`, `-3` and
 so on. With `--for`, the run focuses on that registered startup and its
 `docs/product.md`, the owner's description of what it is, whom it serves and
 what it does today; the application templates seed that file.

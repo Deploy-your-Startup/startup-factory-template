@@ -18,7 +18,8 @@ export function experimentDirectory(slug) {
 // only once its user, buyer and payer are named and the verdict is "test".
 const ROLES = ["User", "Buyer", "Payer", "Verdict"];
 
-export function readPersonas(text) {
+// Parses the section without judging it; discovery accepts "sharpen" drafts.
+export function parsePersonas(text) {
   const section = /^## Personas[ \t]*\n([\s\S]*?)(?=^## |(?![\s\S]))/m.exec(text)?.[1];
   if (section === undefined) {
     throw new Error("The idea has no `## Personas` section. Judge it with the idea-personas skill first.");
@@ -31,6 +32,12 @@ export function readPersonas(text) {
   }
   const verdict = /^(test|sharpen|drop)\b/i.exec(personas.verdict)?.[1]?.toLowerCase();
   if (!verdict) throw new Error("The persona verdict must start with test, sharpen or drop.");
+  return { ...personas, verdict, reason: personas.verdict };
+}
+
+export function readPersonas(text) {
+  const { verdict, reason, ...personas } = parsePersonas(text);
+  personas.verdict = reason;
   if (verdict !== "test") throw new Error(`The persona verdict is "${verdict}", not "test": ${personas.verdict}`);
   return personas;
 }

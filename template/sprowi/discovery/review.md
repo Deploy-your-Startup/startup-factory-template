@@ -26,6 +26,11 @@ findings with a named rule, file, concrete problem and fix.
   denominator and thresholds. Measure actual use, return visits or payment;
   exclude owner/test traffic and do not equate replies, views or signups with
   demand or willingness to pay.
+- Personas: user, buyer and payer are concrete and distinct (or explicitly the
+  same person), each with today's workaround, a real objection and a reachable
+  place; "everyone" or an invented community is not reachable. A `test` verdict
+  needs every role reachable and a smallest test that recruits the user persona
+  there; otherwise it must be `sharpen`. Persona agreement is never demand.
 - Fit: NEW markets are allowed; with a focus startup in loop.md, every idea
   must serve that startup. The owner can test alone and use supported
   Factory stacks for the first web experiment. No assumed team, licence,

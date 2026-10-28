@@ -6,7 +6,9 @@ description: Use ONLY when working with startup-factory and the owner wants to j
 # Idea personas
 
 Judge one idea from `ideas/` through the people it depends on before anyone
-builds or tests it. The result is the idea's `## Personas` section, which
+builds or tests it. Ideas from `scripts/sprowi.sh ideas` already carry a
+model-written `## Personas` draft; treat it as a starting point to challenge
+with the owner, not as settled. The result is the idea's `## Personas` section, which
 `scripts/sprowi.sh select` requires before it creates an experiment.
 
 The point is not a better document. It is to drop weak ideas within minutes

@@ -87,7 +87,8 @@ scripts/sprowi.sh ideas --for <project>  # ideas for one that exists
 ```
 
 This is the discovery pipeline as an on-demand batch: research, sandboxed
-generation, review and `scripts/check-ideas.mjs`, then three files added to
+generation with a `## Personas` judgement per idea, review and
+`scripts/check-ideas.mjs`, then three files added to
 `ideas/` under the next free numbers and committed (pushed when publication is
 enabled). The hub needs a clean checkout first. The check refuses ideas without
 a stated problem, without a cheapest way to find out, or without an assumption
