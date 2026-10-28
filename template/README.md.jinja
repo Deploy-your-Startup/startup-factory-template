@@ -36,22 +36,17 @@ Initialize Git if this workspace is not already its own repository, review the
 files and commit them, including `.copier-answers.yml`. Use your own repository
 for the portfolio; do not publish private project metadata unintentionally.
 
-## Shared skills tooling
+## Agent skills
 
-The [shared skills repository](https://github.com/Deploy-your-Startup/skills)
-is included in `tooling` for inspecting and contributing reusable agent skills.
-`scripts/init.sh` clones this repository; it does not install or activate its
-skills. See the repository for available skills and installation instructions.
+`scripts/init.sh` automatically installs the deployment, Sprowi task and idea
+review skills for your configured Claude Code, Codex or OpenCode agents.
+The deployment skill comes with the Startup CLI; the other two are installed
+with `gh skills` from your local Factory files. If prompted, update
+GitHub CLI. After setting up an agent later, rerun `scripts/init.sh`, then start
+a new agent session.
 
-Existing factories preserve their registry during template updates. To add the
-contributor checkout, add this entry under `tooling` in `projects.yaml` and run
-`scripts/init.sh`:
-
-```yaml
-  - name: skills
-    repo: https://github.com/Deploy-your-Startup/skills.git
-    description: Optional shared agent skills for Startup Factory
-```
+Additional integrations from the [skills repository](https://github.com/Deploy-your-Startup/skills)
+are optional and are not installed automatically.
 
 ## Add your first startup
 

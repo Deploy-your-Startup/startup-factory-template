@@ -22,7 +22,7 @@ test("GIVEN an unreachable repository WHEN setup clones it THEN setup fails befo
   const root = mkdtempSync(join(tmpdir(), "factory-clone-failure-"));
   try {
     cpSync(new URL("scripts", source), join(root, "scripts"), { recursive: true });
-    const bin = join(root, "bin"); mkdirSync(bin); mkdirSync(join(root, ".codex"));
+    const bin = join(root, "bin"); mkdirSync(bin);
     const quote = (s) => "'" + s.replaceAll("'", "'\\''") + "'";
     for (const name of ["startup", "yq", "git", "dirname", "head"]) {
       const command = name === "startup" ? (process.env.STARTUP_TEST_EXECUTABLE || (existsSync(join(homedir(), ".local/share/startup/commands/startup")) ? join(homedir(), ".local/share/startup/commands/startup") : name)) : name;

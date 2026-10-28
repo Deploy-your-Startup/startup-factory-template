@@ -26,5 +26,9 @@ jobs:
           curl -fsSL https://github.com/mikefarah/yq/releases/download/v4.54.1/yq_linux_amd64 -o "$HOME/.local/bin/yq"
           chmod +x "$HOME/.local/bin/yq"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: Install GitHub CLI with skills support
+        run: |
+          curl -fsSL https://github.com/cli/cli/releases/download/v2.103.2/gh_2.103.2_linux_amd64.tar.gz | tar -xz -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/gh_2.103.2_linux_amd64/bin" >> "$GITHUB_PATH"
       - name: Validate template and exercise creation, adoption and updates
         run: node --test scripts/tests/*.test.mjs
