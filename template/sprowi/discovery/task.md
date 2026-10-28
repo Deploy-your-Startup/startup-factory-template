@@ -55,6 +55,23 @@ Write in the language supplied in loop.md. Keep these English headings:
   usable website to this section.
 - `## Why it might fail`: strongest counterargument, including missing evidence
   of willingness to pay, and why existing competitors may already solve it.
+- `## Personas`: judge the idea through the people it depends on, as the
+  `idea-personas` skill does. Keep the three roles separate unless the idea truly
+  makes them one person, speak as each briefly, and add one outside voice (the
+  incumbent, a distribution skeptic or a payment skeptic). Write exactly:
+
+  ```markdown
+  - **User:** <who> — today: <current workaround> — no because: <main objection> — find them: <concrete place>
+  - **Buyer:** <same as user, or who> — today: … — no because: … — find them: …
+  - **Payer:** <who, or nobody yet> — today: … — no because: … — find them: …
+  - **Verdict:** test | sharpen — <one sentence why, naming the outside voice's objection>
+  ```
+
+  `test` only when every role is clear and reachable: then `## Smallest test`
+  recruits the user persona from the named place, and the strongest objection
+  is the condition in `## Assumption`. Otherwise `sharpen`, saying what must
+  change. Do not propose an idea that would be `drop`; replace it. Personas are
+  hypotheses that sharpen the test, never evidence of demand.
 - `## Rank`: exactly one digit, 1, 2 or 3, on its own line. Use each rank once.
 - `## Rationale`: explain the rank using problem evidence, reachable users,
   plausible willingness to pay, solo feasibility and cost of the smallest test.

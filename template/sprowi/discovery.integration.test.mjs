@@ -86,6 +86,7 @@ if(prompt.startsWith('Review')){
   for(const h of headings){
    text+='\\n## '+h+'\\n\\n'+(h==='Web experiment'?'A small web app takes one input and returns a useful result. Use the supported Factory template and deploy with startup after owner approval, then share the URL through a permitted audience channel. Record core_action_completed for eligible visitors.':'If at least five of ten eligible visitors complete the core action in the web app within three days, test customer problem '+i+'. Source: https://example.invalid/evidence')+'\\n';
   }
+  if(!existsSync(${JSON.stringify(join(root, "no-personas"))}))text+='\\n## Personas\\n\\n- **User:** Operators who copy data by hand — today: spreadsheets — no because: habit — find them: a public operators forum\\n- **Buyer:** same as user — today: spreadsheets — no because: time — find them: the same forum\\n- **Payer:** nobody yet — today: free tools — no because: no budget — find them: not applicable\\n- **Verdict:** '+(existsSync(${JSON.stringify(join(root, "drop-verdict"))})?'drop':'test')+' — the user is reachable; the incumbent spreadsheet is the objection to test\\n';
   text+='\\n## Rank\\n\\n'+(duplicate?1:i)+'\\n';
   writeFileSync('ideas/'+String(base+i).padStart(3,'0')+'-customer-'+i+'.md',text);
  }
@@ -166,9 +167,11 @@ for (const engine of ["claude", "codex"]) {
       assert.equal(readdirSync(join(archive, "ideas")).length, 3);
       assert.deepEqual(readdirSync(join(f.factory, "ideas")).sort(), ["001-customer-1.md", "002-customer-2.md", "003-customer-3.md"]);
       assert.doesNotMatch(readFileSync(join(f.factory, "ideas/001-customer-1.md"), "utf8"), /## Rank/);
+      assert.match(readFileSync(join(f.factory, "ideas/001-customer-1.md"), "utf8"), /## Personas\n\n- \*\*User:\*\*/);
       assert.equal(f.git("status", "--porcelain"), "", "Filed ideas are committed; inputs and results stay private and gitignored.");
       assert.match(f.git("log", "-1", "--format=%s"), /Add startup discovery ideas 2026-01-01/);
       const calls = readFileSync(join(f.root, "prompts.log"), "utf8");
+      assert.match(calls, /- \*\*Verdict:\*\* test \| sharpen/);
       assert.match(calls, /NEW markets are allowed/); assert.match(calls, /Provided research is supplied evidence/);
       assert.match(calls, /## Web experiment/);
       assert.match(calls, /build, instrument and ship/);
@@ -211,6 +214,19 @@ test("GIVEN a hand-written idea WHEN a new batch completes THEN discovery files 
     const decision = await f.run(["feedback", "2026-01-01", "007-customer-2.md", "interesting", "--reason", "Reachable through a club"]);
     assert.equal(decision.status, 0, decision.stderr);
   } finally { f.close(); }
+});
+
+test("GIVEN proposals without personas or with a drop verdict WHEN discovery archives them THEN the host refuses the batch", async () => {
+  for (const flag of ["no-personas", "drop-verdict"]) {
+    const f = fixture();
+    try {
+      writeFileSync(join(f.root, flag), flag);
+      const result = await f.run(["run", "--date", "2026-01-01", "--research-file", f.research]);
+      assert.equal(result.status, 1, result.stdout + result.stderr);
+      assert.match(result.stderr, flag === "no-personas" ? /no `## Personas` section/ : /verdict is drop/);
+      assert.equal(existsSync(join(f.factory, "ideas")), false);
+    } finally { f.close(); }
+  }
 });
 
 test("GIVEN a public source endpoint WHEN collecting research THEN retrieved text and source errors are archived and passed to the agent", async () => {

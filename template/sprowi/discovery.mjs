@@ -8,6 +8,7 @@ import { basename, join } from "node:path";
 import { parseArgs } from "node:util";
 import { hubRoot, loadConfig, productDescriptions, readJson, resolveEngine, resolveProject, validatePatch } from "./lib.mjs";
 import { existingTitles, fileIdeas, publishSettings } from "./discovery-ideas.mjs";
+import { parsePersonas } from "./experiment.mjs";
 
 const directory = join(hubRoot, "sprowi/discovery");
 const state = join(directory, "state");
@@ -195,6 +196,9 @@ function archiveIdeas(result, target, report) {
       for (const heading of ["Evidence", "Distribution", "Web experiment", "If validated", "Why it might fail", "Rationale"]) {
         if (section(text, heading).length < 40) throw new Error(`${file}: missing or thin ${heading}.`);
       }
+      let personas;
+      try { personas = parsePersonas(text); } catch (error) { throw new Error(`${file}: ${error.message}`); }
+      if (personas.verdict === "drop") throw new Error(`${file}: an idea whose personas verdict is drop is not a proposal; replace it.`);
       const citations = new Set((section(text, "Evidence").match(/https?:\/\/[^\s<>()\]]+/g) ?? []).map((url) => url.replace(/[.,;]+$/, "")));
       if (!report.sources.some((source) => citations.has(source.url))) throw new Error(`${file}: Evidence must cite a supplied research URL.`);
       const rankText = section(text, "Rank");
