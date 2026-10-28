@@ -36,6 +36,26 @@ Initialize Git if this workspace is not already its own repository, review the
 files and commit them, including `.copier-answers.yml`. Use your own repository
 for the portfolio; do not publish private project metadata unintentionally.
 
+## Optional shared skills
+
+The [shared skills repository](https://github.com/Deploy-your-Startup/skills)
+provides optional integrations. From this Factory root, install the Maestri skill:
+
+```sh
+npx --yes skills@1.7.4 add Deploy-your-Startup/skills --skill factory-maestri -a claude-code -a codex --copy -y
+```
+
+Start a new agent session and ask it to use `factory-maestri` to set up this
+Factory in Maestri. The skill creates a portfolio canvas from your registry with
+a coding-agent terminal, connected notes and a reusable Partitura. It is not
+installed by default and does not replace the `/factory` dashboard. Installing
+the skill does not install Maestri or authenticate Claude. Your portfolio and
+saved canvas stay local. See the skill repository for prerequisites and checks.
+
+Existing factories preserve their registry during template updates. To keep a
+contributor checkout, add the public skills repository to `tooling` and run
+`scripts/init.sh`; installing the skill directly does not require that checkout.
+
 ## Add your first startup
 
 From this workspace root, run:

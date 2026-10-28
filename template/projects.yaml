@@ -6,6 +6,9 @@ evidence_repo: ""
 projects: []
 
 tooling:
+  - name: skills
+    repo: https://github.com/Deploy-your-Startup/skills.git
+    description: Optional shared agent skills for Startup Factory
   - name: cli
     repo: https://github.com/Deploy-your-Startup/cli.git
     description: Startup CLI and bundled agent skills
