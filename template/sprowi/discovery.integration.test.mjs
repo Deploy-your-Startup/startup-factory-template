@@ -99,7 +99,8 @@ else{
   executable("claude", provider); executable("codex", provider);
   const research = join(root, "research.json");
   writeFileSync(research, JSON.stringify({ sources: [{ url: "https://example.invalid/evidence", title: "A real fixture complaint", text: "Operators repeatedly enter the same data manually and ask how to avoid the duplicated work.", observedAt: "2026-01-01T09:00:00Z" }] }));
-  const env = { ...process.env, PATH: `${bin}:${process.env.PATH}`, GIT_CONFIG_GLOBAL: "/dev/null", GIT_CONFIG_NOSYSTEM: "1", TZ: "UTC" };
+  // Filing commits the new ideas, so the owner's Git identity is part of the fixture.
+  const env = { ...process.env, PATH: `${bin}:${process.env.PATH}`, GIT_CONFIG_GLOBAL: "/dev/null", GIT_CONFIG_NOSYSTEM: "1", TZ: "UTC", GIT_AUTHOR_NAME: "Discovery integration", GIT_AUTHOR_EMAIL: "test@example.invalid", GIT_COMMITTER_NAME: "Discovery integration", GIT_COMMITTER_EMAIL: "test@example.invalid" };
   for (const key of Object.keys(env)) if (key.startsWith("SPROWI_")) delete env[key];
   const invoke = (args, extra = {}) => new Promise((resolve) => {
     const child = spawn(process.execPath, [join(factory, "sprowi/cli.mjs"), ...args], { cwd: factory, env: { ...env, ...extra } });
