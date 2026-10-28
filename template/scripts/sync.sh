@@ -1,31 +1,63 @@
 #!/bin/bash
-# sync.sh — pull startup-factory + all project repos
-set -uo pipefail
-
-if [ -f "$HOME/.zshrc" ]; then
-  export PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
-fi
+# Sync selected checkouts; no arguments preserves the legacy full sync.
+set -euo pipefail
 
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 root_dir="$(dirname "$script_dir")"
+verbose=0
+all=0
+hub=0
+selected=()
+usage() {
+  echo "Usage: scripts/sync.sh [--all | --hub | --project NAME ...] [--verbose]"
+  echo "No scope selects all repositories. --hub and --project may be combined."
+}
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --all) all=1; shift ;;
+    --hub) hub=1; shift ;;
+    --project)
+      if [ "$#" -lt 2 ] || [[ "$2" == --* ]]; then
+        echo "--project requires a registered name" >&2; exit 2
+      fi
+      selected+=("$2"); shift 2 ;;
+    --verbose) verbose=1; shift ;;
+    --help|-h) usage; exit 0 ;;
+    *) usage >&2; echo "Unknown argument: $1" >&2; exit 2 ;;
+  esac
+done
+if [ "$all" -eq 1 ] && { [ "$hub" -eq 1 ] || [ "${#selected[@]}" -gt 0 ]; }; then
+  echo "--all cannot be combined with --hub or --project" >&2; exit 2
+fi
+if [ "$hub" -eq 0 ] && [ "${#selected[@]}" -eq 0 ]; then all=1; fi
 
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[0;33m'
-CYAN='\033[0;36m'
-NC='\033[0m'
-
-echo "=== startup-factory sync ==="
-echo ""
+# Resolve every name before touching any checkout.
+records=()
+for kind in startups tooling; do
+  entries="$("$script_dir/registry.sh" "$kind")"
+  while IFS=$'\t' read -r name repo _rest; do
+    [ -n "$name" ] || continue
+    records+=("$name"$'\t'"$root_dir/projects/$kind/$name"$'\t'"$repo")
+  done <<< "$entries"
+done
+for name in "${selected[@]+"${selected[@]}"}"; do
+  matches=0
+  for record in "${records[@]+"${records[@]}"}"; do
+    IFS=$'\t' read -r entry _rest <<< "$record"
+    if [ "$entry" = "$name" ]; then matches=$((matches + 1)); fi
+  done
+  if [ "$matches" -ne 1 ]; then
+    echo "Project must match exactly one registry entry: $name ($matches matches)" >&2
+    exit 2
+  fi
+done
 
 updated=0
 already_current=0
-skipped_missing=0
+skipped=0
 failed=0
-
-# A repository moved to another owner or name keeps its history. Point origin at
-# the registered URL when that URL shares history with the checkout; otherwise
-# leave origin alone so the registry check reports the mismatch.
+# Keep moved-origin diagnostics readable without terminal color codes.
+CYAN='' YELLOW='' NC=''
 follow_registered_origin() {
   local name="$1" target_dir="$2" repo="$3" branch="$4" origin
   origin=$(git -C "$target_dir" remote get-url origin 2>/dev/null) || return 0
@@ -37,112 +69,74 @@ follow_registered_origin() {
     echo -e "  ${CYAN}→${NC} $name — origin moved: $origin → $repo"
   else
     echo -e "  ${YELLOW}⊘${NC} $name — registered $repo shares no history with origin, keeping $origin"
+    return 1
   fi
 }
+
 
 pull_repo() {
-  local name="$1"
-  local target_dir="$2"
-  local repo="$3"
-
+  local name="$1" target_dir="$2" repo="$3" branch before after output
   if [ ! -d "$target_dir" ]; then
-    echo -e "  ${YELLOW}⊘${NC} $name — directory missing, run init.sh to clone"
-    skipped_missing=$((skipped_missing + 1))
-    return
+    echo "$name: missing checkout; run scripts/init.sh" >&2
+    failed=$((failed + 1)); return
   fi
-
-  local branch
-  branch=$(git -C "$target_dir" branch --show-current 2>/dev/null || echo "")
+  branch=$(git -C "$target_dir" branch --show-current)
   if [ -z "$branch" ]; then
-    echo -e "  ${YELLOW}⊘${NC} $name — detached HEAD, skipping"
-    return
+    echo "$name: detached HEAD, skipped" >&2
+    skipped=$((skipped + 1)); return
   fi
-
-  follow_registered_origin "$name" "$target_dir" "$repo" "$branch"
-
-  local dirty=""
-  if ! git -C "$target_dir" diff --quiet 2>/dev/null || \
-     ! git -C "$target_dir" diff --cached --quiet 2>/dev/null; then
-    dirty=" ${YELLOW}(dirty)${NC}"
+  if [ -n "$(git -C "$target_dir" status --porcelain)" ]; then
+    echo "$name ($branch): local changes, skipped; preserve or commit them before syncing" >&2
+    skipped=$((skipped + 1)); return
   fi
-
-  local before_hash
-  before_hash=$(git -C "$target_dir" rev-parse --short HEAD 2>/dev/null || echo "")
-
-  echo -ne "  ⟳ $name ($branch)$dirty — pulling... "
-
-  local pull_output
-  if pull_output=$(git -C "$target_dir" pull --rebase origin "$branch" --quiet 2>&1); then
-    local after_hash
-    after_hash=$(git -C "$target_dir" rev-parse --short HEAD 2>/dev/null || echo "")
-    if [ "$before_hash" != "$after_hash" ]; then
-      echo -e "${GREEN}updated${NC} ($before_hash → $after_hash)"
+  if [ -n "$repo" ] && ! follow_registered_origin "$name" "$target_dir" "$repo" "$branch"; then
+    failed=$((failed + 1)); return
+  fi
+  if ! git -C "$target_dir" ls-remote --exit-code origin "refs/heads/$branch" >/dev/null 2>&1; then
+    echo "$name ($branch): remote branch missing or origin inaccessible; checkout unchanged" >&2
+    failed=$((failed + 1)); return
+  fi
+  before=$(git -C "$target_dir" rev-parse HEAD)
+  if output=$(git -C "$target_dir" pull --rebase origin "$branch" --quiet 2>&1); then
+    after=$(git -C "$target_dir" rev-parse HEAD)
+    if [ "$before" != "$after" ]; then
       updated=$((updated + 1))
+      if [ "$verbose" -eq 1 ]; then echo "$name ($branch) — pulling... updated"; fi
     else
-      echo -e "${CYAN}already up to date${NC}"
       already_current=$((already_current + 1))
+      if [ "$verbose" -eq 1 ]; then echo "$name ($branch) — pulling... already up to date"; fi
     fi
   else
-    echo -e "${RED}failed${NC}"
-    [ -z "$pull_output" ] || printf '    %s\n' "$pull_output"
+    echo "$name ($branch): sync failed" >&2
+    printf '%s\n' "$output" >&2
     failed=$((failed + 1))
   fi
 }
 
-# Phase 1: Hub-Repo selbst
-echo "Hub repo:"
-hub_branch=$(git -C "$root_dir" branch --show-current 2>/dev/null || echo "")
-if [ -n "$hub_branch" ]; then
-  before=$(git -C "$root_dir" rev-parse --short HEAD 2>/dev/null || echo "")
-  echo -n "  ⟳ startup-factory ($hub_branch) — pulling... "
-  if pull_output=$(git -C "$root_dir" pull --rebase origin "$hub_branch" --quiet 2>&1); then
-    after=$(git -C "$root_dir" rev-parse --short HEAD 2>/dev/null || echo "")
-    if [ "$before" != "$after" ]; then
-      echo -e "${GREEN}updated${NC} ($before → $after)"
-      updated=$((updated + 1))
-    else
-      echo -e "${CYAN}already up to date${NC}"
-      already_current=$((already_current + 1))
-    fi
+if [ "$all" -eq 1 ] || [ "$hub" -eq 1 ]; then
+  pull_repo startup-factory "$root_dir" ""
+fi
+for record in "${records[@]+"${records[@]}"}"; do
+  IFS=$'\t' read -r name directory repo <<< "$record"
+  chosen=$all
+  for selection in "${selected[@]+"${selected[@]}"}"; do
+    if [ "$selection" = "$name" ]; then chosen=1; fi
+  done
+  if [ "$chosen" -eq 1 ]; then pull_repo "$name" "$directory" "$repo"; fi
+done
+
+# A scoped sync does not claim to validate unrelated checkouts.
+drift=0
+registry_state=not-checked
+if [ "$all" -eq 1 ]; then
+  registry_state=passed
+  if output=$("$script_dir/registry.sh" check 2>&1); then
+    if [ "$verbose" -eq 1 ]; then printf '%s\n' "$output"; fi
   else
-    echo -e "${RED}failed${NC}"
-    [ -z "$pull_output" ] || printf '    %s\n' "$pull_output"
-    failed=$((failed + 1))
+    printf '%s\n' "$output" >&2
+    drift=1
+    registry_state=failed
   fi
 fi
-echo ""
-
-# Phase 2: Alle Projekt-Repos
-registry_startups="$("$script_dir/registry.sh" startups)" || exit 1
-registry_tooling="$("$script_dir/registry.sh" tooling)" || exit 1
-
-echo "Startups:"
-while IFS=$'\t' read -r name repo _deployed _ctx; do
-  [ -n "$name" ] || continue
-  pull_repo "$name" "$root_dir/projects/startups/$name" "$repo"
-done <<< "$registry_startups"
-
-echo ""
-echo "Tooling:"
-while IFS=$'\t' read -r name repo; do
-  [ -n "$name" ] || continue
-  pull_repo "$name" "$root_dir/projects/tooling/$name" "$repo"
-done <<< "$registry_tooling"
-
-# Summary
-echo ""
-echo "=== Summary ==="
-echo -e "  ${GREEN}Updated:${NC}         $updated"
-echo -e "  ${CYAN}Already current:${NC} $already_current"
-[ "$skipped_missing" -gt 0 ] && echo -e "  ${YELLOW}Missing (→ run init.sh):${NC} $skipped_missing"
-[ "$failed" -gt 0 ] && echo -e "  ${RED}Failed:${NC}          $failed"
-echo ""
-
-# Pulling cannot notice unregistered or mismatched checkouts; report them here.
-echo "Registry:"
-drift=0
-"$script_dir/registry.sh" check || drift=1
-echo ""
-if [ "$failed" -gt 0 ] || [ "$drift" -gt 0 ]; then
-  exit 1
-fi
+echo "Sync: $updated updated, $already_current current, $skipped skipped, $failed failed; registry=$registry_state"
+if [ "$failed" -gt 0 ] || [ "$skipped" -gt 0 ] || [ "$drift" -gt 0 ]; then exit 1; fi

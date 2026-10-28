@@ -78,3 +78,10 @@ test("GIVEN the agent instructions WHEN looking for their sources THEN they link
   assert.ok(links.includes("docs/testing-policy.md"));
   assert.ok(links.includes("VISION.md"));
 });
+
+
+test("GIVEN startup instructions WHEN checking the context budget THEN the entrypoint stays under 400 words and 3500 bytes", () => {
+  const instructions = readFileSync(join(root, "AGENTS.md"), "utf8");
+  assert.ok(instructions.trim().split(/\s+/).length <= 400, "Move operational details to linked task-specific documentation");
+  assert.ok(Buffer.byteLength(instructions) <= 3500, "Startup instructions exceed the context budget");
+});
