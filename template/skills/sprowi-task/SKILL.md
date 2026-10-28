@@ -86,13 +86,15 @@ scripts/sprowi.sh ideas                  # startups the portfolio does not have 
 scripts/sprowi.sh ideas --for <project>  # ideas for one that exists
 ```
 
-The brief is generated, so this is one command. Idea runs always target the hub
-because the files land in `ideas/`, and `scripts/check-ideas.mjs` replaces the
-project's checks: it refuses ideas without a stated problem, without a cheapest
-way to find out, or without an assumption that could turn out false.
+This is the discovery pipeline as an on-demand batch: research, sandboxed
+generation, review and `scripts/check-ideas.mjs`, then three files added to
+`ideas/` under the next free numbers and committed (pushed when publication is
+enabled). The hub needs a clean checkout first. The check refuses ideas without
+a stated problem, without a cheapest way to find out, or without an assumption
+that could turn out false.
 
 Nothing verifies that an idea is *good*. Present the result as a shortlist to
-judge, never as a decision.
+judge, never as a decision; the next step is `idea-personas`.
 
 ## After a run
 

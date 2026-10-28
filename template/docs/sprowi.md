@@ -210,30 +210,28 @@ its `HEAD`, and refusing a dirty tree is what keeps your own work out of it.
 
 ### Asking for ideas
 
-An idea run is the same loop with a different target and a different verifier.
-It always works on the hub, because that is where the idea files live, and
-`scripts/check-ideas.mjs` takes the place of the project's checks: it cannot
-tell a good idea from a bad one, but it refuses the shapes that make one
-impossible to judge — no stated problem, no cheapest way to find out, no
-assumption that could turn out false, or the same idea twice.
+There is one idea pipeline, and every idea ends up in `ideas/`. Asking for
+ideas on demand runs the same daily discovery described below as a fresh batch:
 
 ```bash
 scripts/sprowi.sh ideas                     # startups this portfolio does not have yet
-scripts/sprowi.sh ideas --for example-app        # ideas for one that exists
-scripts/sprowi.sh ideas --for example-app --publish --model claude-sonnet-5-5
+scripts/sprowi.sh ideas --for example-app   # ideas for one that exists
+scripts/sprowi.sh ideas --engine codex --model gpt-5.5
 ```
 
-The brief is generated rather than hand-written, so asking is one command. With
-`--for`, the brief includes the startup's `docs/product.md`, the owner's
-description of what it is, whom it serves and what it does today; the
-application templates seed that file. The
-task directory it writes stays behind, so a brief that produced something good
-can be edited and run again. A hand-written brief is an ordinary task: write it
-under `sprowi/tasks/startup-factory/` and use `run`.
+`ideas` is `discover run --fresh`: it collects research, runs the sandboxed
+loop with the discovery generator and reviewer, checks the files and adds them
+to `ideas/` under the next free numbers, committed and, with publication
+enabled, pushed. A day that already has a batch gets `2026-01-01-2`, `-3` and
+so on. With `--for`, the run focuses on that registered startup and its
+`docs/product.md`, the owner's description of what it is, whom it serves and
+what it does today; the application templates seed that file.
 
-Substance is judged by the reviewer, which has its own rubric for this target in
-`sprowi/projects/startup-factory.review.md`; the code rubric would ask an idea
-file about ADRs and test coverage.
+`scripts/check-ideas.mjs` verifies the shape of every idea: it cannot tell a
+good idea from a bad one, but it refuses the shapes that make one impossible to
+judge — no stated problem, no cheapest way to find out, no assumption that
+could turn out false, or the same idea twice. A hand-written idea is just a file
+in `ideas/` that passes that check.
 
 ### Daily discovery, with Claude or Codex
 
@@ -279,11 +277,9 @@ exclude owner/test traffic. Plans describe future deployment and its unknown
 costs/prerequisites; discovery itself never builds or deploys an application.
 Building, publishing, contacting people and spending still need owner approval.
 Existing completed archives retain their original content and can still be filed.
-Existing owners should also review preferences that still defer all building,
-and the `Smallest test` rules in `sprowi/projects/startup-factory.review.md`
-used by the ordinary `ideas` command. Those owner-managed files survive updates;
-adopt the new web-experiment direction deliberately rather than overwriting
-personal preferences or reviewer customizations. The discovery-specific task
+Existing owners should also review preferences that still defer all building.
+That owner-managed file survives updates; adopt the web-experiment direction
+deliberately rather than overwriting personal preferences. The discovery-specific task
 and review above are shared template files and update normally.
 
 `sprowi/discovery/config.json` is owner-managed and survives template updates.

@@ -16,8 +16,8 @@ function fixture(engine = "claude") {
   const source = new URL("../", import.meta.url);
   cpSync(new URL("sprowi", source), join(factory, "sprowi"), { recursive: true, filter: (path) => !/\/(state|tasks|runs|experiments)(\/|$)/.test(path) });
   mkdirSync(join(factory, "scripts"));
-  for (const name of ["sprowi.sh", "check-ideas.mjs"]) cpSync(new URL(`scripts/${name}`, source), join(factory, "scripts", name));
-  writeFileSync(join(factory, "projects.yaml"), "projects: []\ntooling: []\n");
+  for (const name of ["sprowi.sh", "check-ideas.mjs", "registry.sh"]) cpSync(new URL(`scripts/${name}`, source), join(factory, "scripts", name));
+  writeFileSync(join(factory, "projects.yaml"), "projects:\n  - name: board-club\n    repo: https://github.com/example-owner/board-club.git\ntooling: []\n");
   writeFileSync(join(factory, "VISION.md"), "Build a small web product, distribute it and learn from real use.\n");
   writeFileSync(join(factory, ".gitignore"), "/sprowi/runs/\n/sprowi/tasks/\n/sprowi/discovery/state/\n/projects/\n");
   mkdirSync(join(factory, "projects/startups/board-club/docs"), { recursive: true });
@@ -79,7 +79,8 @@ if(prompt.startsWith('Review')){
  const reuse=existsSync(${JSON.stringify(join(root, "reuse-numbers"))}), base=reuse?0:Math.max(0,...used);
  const duplicate=existsSync(${JSON.stringify(join(root, "duplicate-rank"))});
  for(let i=1;i<=3;i++){
-  let text='# Distinct customer problem '+i+'\\n';
+  const prefix=existsSync(${JSON.stringify(join(root, "title-prefix"))})?readFileSync(${JSON.stringify(join(root, "title-prefix"))},'utf8'):'Distinct customer problem';
+  let text='# '+prefix+' '+i+'\\n';
   const headings=['Problem','Evidence','Distribution','Smallest test','Assumption','If validated','Why it might fail','Rationale'];
   if(!existsSync(${JSON.stringify(join(root, "paper-only"))}))headings.push('Web experiment');
   for(const h of headings){
@@ -110,22 +111,30 @@ else{
     child.on("close", (status) => { clearTimeout(timeout); resolve({ status, stdout, stderr }); });
   });
   const run = (args, extra) => invoke(["discover", ...args], extra);
-  return { root, factory, research, run, ideas: () => invoke(["ideas"]), git, close: () => rmSync(root, { recursive: true, force: true }) };
+  return { root, factory, research, run, ideas: (args = []) => invoke(["ideas", ...args]), git, close: () => rmSync(root, { recursive: true, force: true }) };
 }
 
-test("GIVEN the ordinary ideas command WHEN it creates and runs a brief THEN the agent receives the same small web-build direction without deployment authority", async () => {
+test("GIVEN a completed day WHEN asking for ideas for one startup THEN a fresh focused batch is filed into ideas/ beside the daily one", async () => {
   const f = fixture();
   try {
-    const result = await f.ideas();
+    const daily = await f.run(["run", "--date", "2026-01-01", "--research-file", f.research]);
+    assert.equal(daily.status, 0, daily.stdout + daily.stderr);
+    // The fake model repeats its titles; distinct titles stand in for new ideas.
+    writeFileSync(join(f.root, "title-prefix"), "Board club problem");
+    const result = await f.ideas(["--for", "board-club", "--date", "2026-01-01", "--research-file", f.research]);
     assert.equal(result.status, 0, result.stdout + result.stderr);
-    const tasks = join(f.factory, "sprowi/tasks/startup-factory");
-    const brief = readFileSync(join(tasks, readdirSync(tasks)[0], "task.md"), "utf8");
-    assert.match(brief, /small website or web app/);
-    assert.match(brief, /up to three days of building/);
-    assert.match(brief, /grants no permission to build, contact or deploy/);
-    assert.doesNotMatch(brief, /Anything needing new infrastructure, a new service/);
-    assert.match(readFileSync(join(f.root, "prompts.log"), "utf8"), /actual use, return visits or payment/);
-    assert.match(readFileSync(join(f.root, "prompts.log"), "utf8"), /an interactive\s+checklist can be a product feature/);
+    const batch = JSON.parse(readFileSync(join(f.factory, "sprowi/discovery/state/history/2026-01-01-2/batch.json"), "utf8"));
+    assert.equal(batch.focus, "board-club");
+    assert.deepEqual(batch.ideas.map((idea) => idea.filedAs), ["004-customer-1.md", "005-customer-2.md", "006-customer-3.md"]);
+    assert.match(f.git("log", "-1", "--format=%s"), /Add startup discovery ideas 2026-01-01-2/);
+    assert.equal(f.git("status", "--porcelain"), "");
+    const prompts = readFileSync(join(f.root, "prompts.log"), "utf8");
+    assert.match(prompts, /Focus: ideas for the existing startup board-club/);
+    assert.match(prompts, /names a focus startup/);
+    const unknown = await f.ideas(["--for", "no-such-startup", "--research-file", f.research]);
+    assert.equal(unknown.status, 1);
+    const feedback = await f.run(["feedback", "2026-01-01-2", "005-customer-2.md", "interesting", "--reason", "Club members asked for it"]);
+    assert.equal(feedback.status, 0, feedback.stderr);
   } finally { f.close(); }
 });
 

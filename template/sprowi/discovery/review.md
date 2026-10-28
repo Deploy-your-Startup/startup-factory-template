@@ -26,7 +26,8 @@ findings with a named rule, file, concrete problem and fix.
   denominator and thresholds. Measure actual use, return visits or payment;
   exclude owner/test traffic and do not equate replies, views or signups with
   demand or willingness to pay.
-- Fit: NEW markets are allowed. The owner can test alone and use supported
+- Fit: NEW markets are allowed; with a focus startup in loop.md, every idea
+  must serve that startup. The owner can test alone and use supported
   Factory stacks for the first web experiment. No assumed team, licence,
   inventory, customer access or budget.
 - Distinctness: three different customer problems; check archived and rejected

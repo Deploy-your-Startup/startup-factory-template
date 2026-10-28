@@ -14,17 +14,17 @@ import {
 } from "node:fs";
 import { join, resolve } from "node:path";
 import { parseArgs } from "node:util";
-import { ENGINES, hubRoot, loadConfig, productDescriptions, readJson, registryProjects, resolveEngine, resolveProject, supportsSandboxSkillIsolation } from "./lib.mjs";
+import { ENGINES, hubRoot, loadConfig, readJson, registryProjects, resolveEngine, resolveProject, supportsSandboxSkillIsolation } from "./lib.mjs";
 import { evaluateSelectedIdea, experimentDirectory, makeIdeaTask, selectIdea } from "./experiment.mjs";
 
 const USAGE = `Sprowi · your startup companion
 
   scripts/sprowi.sh init <project>              write sprowi/projects/<project>.json from the project's own verbs
   scripts/sprowi.sh new  <project> <slug>       scaffold a task directory
-  scripts/sprowi.sh ideas [--for <project>]     write a brief and run it: ideas for
-                                              one startup, or for new ones
+  scripts/sprowi.sh ideas [--for <project>]     research and add three ideas to ideas/:
+                                              for one startup, or for new ones
   scripts/sprowi.sh discover [run|status|file|feedback|schedule]
-                                              research, review and archive daily startup bets
+                                              the same pipeline, once per day and scheduled
   scripts/sprowi.sh select <idea.md> <slug>    select an idea and create its experiment plan
   scripts/sprowi.sh evaluate <slug>           evaluate the recorded KPI against the plan
   scripts/sprowi.sh run  <project> <task>       run the loop
@@ -160,106 +160,6 @@ function newTask(projectName, slug, experiment) {
   console.log(`${directory}\n\nEdit task.md, then:\n  scripts/sprowi.sh run ${projectName} ${number}-${slug}`);
 }
 
-// --- ideas ----------------------------------------------------------------
-
-// Idea runs always target the hub, because that is where the idea files live.
-// The brief is generated rather than hand-written, so asking for ideas is one
-// command; the task directory it writes stays, and can be edited and re-run.
-const IDEAS_TARGET = "startup-factory";
-
-function ideasBrief(project) {
-  const shared = `## What an idea is here
-
-A bet this portfolio could test cheaply, not a feature request. Each one names
-a problem somebody actually has, the cheapest thing that would tell you whether
-the bet holds, and an assumption that could turn out false. Where a claim is a
-guess rather than something the portfolio has evidence for, say so plainly
-instead of asserting it.
-
-Prefer a small website or web app with one useful user flow. The first test
-can include up to three days of building, instrumentation and a planned Factory
-deployment, followed by sharing its URL with eligible users. Describe the core
-action, distribution and events for actual use, return visits or payment.
-Paper/PDF checklists, consulting or interviews alone are not the main test;
-checklists can be interactive product features. Landing-page interest alone is
-weaker evidence than product use or payment. Describe future work and unknown
-setup/costs; this idea run grants no permission to build, contact or deploy.
-
-Read \`ideas/\` first and propose nothing that is already there.
-
-## Out of scope
-
-- Anything needing substantial infrastructure, a large service or an assumed
-  budget instead of a bounded first web experiment using the Factory
-- Rewrites, migrations and refactorings — those are tasks, not ideas
-- Ideas whose smallest test takes longer than a few days
-`;
-
-  if (project) {
-    const product = productDescriptions().find((entry) => entry.project === project)?.product;
-    const description = product
-      ? `## The product today\n\nFrom \`projects/startups/${project}/docs/product.md\`, the owner's own description:\n\n${product.trim()}\n\n`
-      : `## The product today\n\n${project} has no \`docs/product.md\` yet. Say which ideas rest on guesses about its audience and features.\n\n`;
-    return `# Task
-
-Propose three ideas for ${project} and write each one to its own file in \`ideas/\`.
-
-${description}## Where to look first
-
-- \`projects/startups/${project}/\` — its README, its AGENTS.md, and the code
-  itself: what it does, who it is for, what is already built
-- \`projects.yaml\` — whether it is deployed, and what else exists around it
-
-Look for what the project is missing rather than what it could add: the step
-where someone gives up, the thing it asks for too early, the work it leaves to
-the person running it.
-
-${shared}`;
-  }
-
-  return `# Task
-
-Propose three ideas for startups this portfolio does not have yet, and write
-each one to its own file in \`ideas/\`.
-
-## Where to look first
-
-- \`projects.yaml\` — what already exists; do not propose a variation of it
-- the existing projects under \`projects/startups/\` — what this factory is
-  actually good at building and running
-
-An idea has to fit the owner's available time, resources and supported stacks.
-Do not assume an existing cluster or deployment when the registry is empty.
-A business that needs a team, a licence or a warehouse is out of scope.
-
-${shared}`;
-}
-
-async function ideas(project, options) {
-  if (project) resolveProject(project);
-  const scope = project ?? "new-startups";
-  const root = join(hubRoot, "sprowi/tasks", IDEAS_TARGET);
-  mkdirSync(root, { recursive: true });
-  const number = String(
-    readdirSync(root).filter((entry) => /^\d{3}-/.test(entry)).length + 1,
-  ).padStart(3, "0");
-  const directory = join(root, `${number}-ideas-${scope}`);
-  mkdirSync(directory);
-  writeFileSync(join(directory, "task.md"), ideasBrief(project));
-  console.log(`Brief: ${join(directory, "task.md")}`);
-
-  loadConfig(IDEAS_TARGET);
-  const { runLoop } = await import("./run-local.mjs");
-  await runLoop({
-    projectName: IDEAS_TARGET,
-    taskDirectory: directory,
-    engineName: options.engine,
-    model: options.model,
-    rounds: options.rounds ? Number(options.rounds) : undefined,
-    publish: Boolean(options.publish),
-  });
-}
-
 // --- ls -------------------------------------------------------------------
 
 function list(projectName) {
@@ -366,17 +266,9 @@ try {
     const { values } = parseArgs({ args: rest, options: { engine: { type: "string" } } });
     doctor(values.engine);
   } else if (command === "ideas") {
-    const { values } = parseArgs({
-      args: rest,
-      options: {
-        for: { type: "string" },
-        engine: { type: "string" },
-        model: { type: "string" },
-        rounds: { type: "string" },
-        publish: { type: "boolean" },
-      },
-    });
-    await ideas(values.for, values);
+    // One idea pipeline: an on-demand run is a fresh discovery batch.
+    const { discoveryCommand } = await import("./discovery.mjs");
+    await discoveryCommand(["run", "--fresh", ...rest]);
   } else if (command === "check") {
     if (!rest[0]) fail(USAGE);
     loadConfig(rest[0]);

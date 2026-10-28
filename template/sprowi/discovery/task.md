@@ -2,10 +2,14 @@
 
 Read VISION.md, projects.yaml, ideas/ and the dated research, preferences,
 decisions, archived proposals and experiment observations supplied in loop.md.
-Propose three distinct NEW startups, one new `ideas/NNN-slug.md` file per bet.
+Propose three distinct NEW bets, one new `ideas/NNN-slug.md` file per bet.
 Only add these three files. Use the next available three-digit numbers in ideas/.
 
-New markets are allowed. Fit means a solo owner can build, deploy and distribute
+When loop.md names a focus startup, propose three ideas for that startup
+instead: from its product description, look for what it is missing rather than
+what it could add — the step where someone gives up, the thing it asks for too
+early, the work it leaves to the person running it. Otherwise new markets are
+allowed. Fit means a solo owner can build, deploy and distribute
 a small website or web app with the Factory's supported templates. The first
 experiment should put a useful web flow in front of real people, not postpone
 all building until after interviews or a paper exercise. Prefer one core action
