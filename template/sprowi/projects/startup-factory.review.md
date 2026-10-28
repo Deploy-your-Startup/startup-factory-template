@@ -17,10 +17,17 @@ vague one wastes a round and helps nobody.
 
 ## Smallest test
 
-- It is genuinely small: days, not months, and it needs no new infrastructure,
-  no new service and no budget approval.
-- It tests the assumption rather than building the finished thing in miniature.
-  "Ship the feature to 10 percent of users" is usually not the smallest test.
+- It is a useful website or web app with one core flow that a solo owner can
+  build and instrument within three days, using the Factory's supported
+  templates and proposed deployment path. Avoid substantial infrastructure or
+  a large service; state unknown costs/setup rather than assuming a budget.
+- The plan explains how eligible users would receive its URL and what real
+  use, return visits or payment would test the assumption. Paper/PDF checklists,
+  consulting or interviews alone are not the main test; an interactive
+  checklist can be a product feature. A landing page needs a clear offer/action
+  and must acknowledge weaker evidence than actual use or payment.
+- Plans describe future work. This run does not authorize implementation,
+  deployment, outreach or spending.
 - Use `Smallest test` as the rule.
 
 ## Assumption
@@ -32,8 +39,9 @@ vague one wastes a round and helps nobody.
 
 ## Fit and distinctness
 
-- The idea belongs to a project in `projects.yaml`, or says which new one it
-  would need. An idea for a business this portfolio is not in is out of scope.
+- The idea belongs to an existing project or names a new one the owner could
+  build and operate alone with a supported Factory stack. New markets are
+  allowed; do not assume customer access, infrastructure or a budget.
 - It is meaningfully different from the other ideas in this batch and from
   everything already in `ideas/`. Different wording for the same bet is a
   duplicate even when the structural check let it through.

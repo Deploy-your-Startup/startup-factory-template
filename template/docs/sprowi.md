@@ -279,6 +279,12 @@ exclude owner/test traffic. Plans describe future deployment and its unknown
 costs/prerequisites; discovery itself never builds or deploys an application.
 Building, publishing, contacting people and spending still need owner approval.
 Existing completed archives retain their original content and remain exportable.
+Existing owners should also review preferences that still defer all building,
+and the `Smallest test` rules in `sprowi/projects/startup-factory.review.md`
+used by the ordinary `ideas` command. Those owner-managed files survive updates;
+adopt the new web-experiment direction deliberately rather than overwriting
+personal preferences or reviewer customizations. The discovery-specific task
+and review above are shared template files and update normally.
 
 `sprowi/discovery/config.json` is owner-managed and survives template updates.
 Set `language`, `timezone`, `preferences`, `excludedIdeas`, optional `engine`,

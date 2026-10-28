@@ -122,6 +122,7 @@ test("GIVEN the ordinary ideas command WHEN it creates and runs a brief THEN the
     assert.match(brief, /grants no permission to build, contact or deploy/);
     assert.doesNotMatch(brief, /Anything needing new infrastructure, a new service/);
     assert.match(readFileSync(join(f.root, "prompts.log"), "utf8"), /actual use, return visits or payment/);
+    assert.match(readFileSync(join(f.root, "prompts.log"), "utf8"), /an interactive\s+checklist can be a product feature/);
   } finally { f.close(); }
 });
 
