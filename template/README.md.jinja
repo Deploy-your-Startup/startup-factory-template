@@ -67,10 +67,11 @@ Claude Code offers to install the bundled
 [dashboard mod](https://github.com/Deploy-your-Startup/startup-factory-mod) when you
 trust this folder; `/factory` then shows each startup's website, pods and git state.
 
-Run `mise tasks --all` to discover project commands. Use `scripts/sync.sh` to pull
-the hub and registered repositories on another configured machine; it ends with
-`mise run registry:check`, which fails when `projects.yaml` and the checkouts
-under `projects/` disagree.
+Run `mise tasks --all` to discover project commands. Use `scripts/sync.sh --project <name>` to sync a registered repository,
+`--hub` for the hub, or `--all` for the full portfolio and registry check.
+Successful runs print a compact summary; add `--verbose` for details.
+Questions and planning do not require a sync. See [operations](docs/operations.md)
+for local-change handling and registry drift.
 
 ## Keep the shared foundation up to date
 

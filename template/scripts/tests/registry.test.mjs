@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -12,10 +12,11 @@ const env = { ...process.env, GIT_CONFIG_GLOBAL: "/dev/null", GIT_CONFIG_NOSYSTE
 function run(command, args, cwd) {
   const result = spawnSync(command, args, { cwd, env, encoding: "utf8", timeout: 30000 });
   assert.equal(result.status, 0, `${command} ${args.join(" ")}\n${result.stdout}\n${result.stderr}`);
+  return result.stdout;
 }
 
 function git(cwd, ...args) {
-  run("git", ["-c", "user.name=Factory integration", "-c", "user.email=test@example.invalid", "-c", "commit.gpgsign=false", "-c", "core.hooksPath=/dev/null", ...args], cwd);
+  return run("git", ["-c", "user.name=Factory integration", "-c", "user.email=test@example.invalid", "-c", "commit.gpgsign=false", "-c", "core.hooksPath=/dev/null", ...args], cwd);
 }
 
 function workspace(registry) {
@@ -140,11 +141,11 @@ test("GIVEN an up-to-date hub with an unregistered checkout WHEN syncing THEN sy
     run("git", ["clone", "-q", origin, hub], directory);
     checkout(hub, "startups/stray", "https://github.com/example/stray.git");
 
-    const result = spawnSync("bash", [join(hub, "scripts/sync.sh")], { cwd: hub, env, encoding: "utf8", timeout: 30000 });
+    const result = spawnSync("bash", [join(hub, "scripts/sync.sh"), "--verbose"], { cwd: hub, env, encoding: "utf8", timeout: 30000 });
 
     assert.equal(result.status, 1, result.stdout + result.stderr);
     assert.match(result.stdout, /startup-factory \(main\) — pulling\.\.\. .*already up to date/);
-    assert.match(result.stdout, /startups\/stray — checkout not in projects\.yaml/);
+    assert.match(result.stdout + result.stderr, /startups\/stray — checkout not in projects\.yaml/);
   } finally { rmSync(directory, { recursive: true, force: true }); }
 });
 
@@ -177,7 +178,7 @@ function repository(directory, name, message) {
 }
 
 function sync(hub) {
-  return spawnSync("bash", [join(hub, "scripts/sync.sh")], { cwd: hub, env, encoding: "utf8", timeout: 30000 });
+  return spawnSync("bash", [join(hub, "scripts/sync.sh"), "--verbose"], { cwd: hub, env, encoding: "utf8", timeout: 30000 });
 }
 
 function originOf(directory) {
@@ -217,7 +218,87 @@ test("GIVEN a registered repository without shared history WHEN syncing THEN ori
 
     assert.equal(result.status, 1, result.stdout + result.stderr);
     assert.match(result.stdout, /site — registered .*unrelated\.git shares no history with origin, keeping .*current\.git/);
-    assert.match(result.stdout, /startups\/site — origin .*current\.git differs from registered/);
+    assert.match(result.stdout + result.stderr, /startups\/site — origin .*current\.git differs from registered/);
     assert.equal(originOf(join(hub, "projects/startups/site")), current.bare);
+    const scoped = scopedSync(hub, "--project", "site");
+    assert.equal(scoped.status, 1, scoped.stdout + scoped.stderr);
+    assert.match(scoped.stdout, /1 failed; registry=not-checked/);
+    assert.equal(originOf(join(hub, "projects/startups/site")), current.bare);
+  } finally { rmSync(directory, { recursive: true, force: true }); }
+});
+
+
+function scopedSync(hub, ...args) {
+  return spawnSync("bash", [join(hub, "scripts/sync.sh"), ...args], { cwd: hub, env, encoding: "utf8", timeout: 30000 });
+}
+
+test("GIVEN pending project commits and an unpublished hub branch WHEN syncing one project THEN only that project advances with compact output", () => {
+  const directory = mkdtempSync(join(tmpdir(), "factory-sync-scoped-"));
+  try {
+    const remote = repository(directory, "site", "initial");
+    const hub = hubWithProject(directory, remote.bare);
+    const site = join(hub, "projects/startups/site");
+    run("git", ["clone", "-q", remote.bare, site], directory);
+    git(hub, "checkout", "-q", "-b", "local-only");
+    const before = git(hub, "rev-parse", "HEAD");
+    git(remote.work, "commit", "-q", "--allow-empty", "-m", "next");
+    git(remote.work, "push", "-q", remote.bare, "main");
+    const result = scopedSync(hub, "--project", "site", "--project", "site");
+    assert.equal(result.status, 0, result.stdout + result.stderr);
+    assert.equal(git(site, "rev-parse", "HEAD"), git(remote.work, "rev-parse", "HEAD"));
+    assert.equal(git(hub, "rev-parse", "HEAD"), before);
+    assert.equal(git(hub, "branch", "--show-current").trim(), "local-only");
+    assert.equal(result.stdout.trim(), "Sync: 1 updated, 0 current, 0 skipped, 0 failed; registry=not-checked");
+    assert.equal(result.stderr, "");
+  } finally { rmSync(directory, { recursive: true, force: true }); }
+});
+
+test("GIVEN an unavailable project WHEN selecting only the hub THEN the hub sync succeeds without touching the project", () => {
+  const directory = mkdtempSync(join(tmpdir(), "factory-sync-hub-"));
+  try {
+    const hub = hubWithProject(directory, join(directory, "absent.git"));
+    const result = scopedSync(hub, "--hub");
+    assert.equal(result.status, 0, result.stdout + result.stderr);
+    assert.match(result.stdout, /0 updated, 1 current, 0 skipped, 0 failed/);
+  } finally { rmSync(directory, { recursive: true, force: true }); }
+});
+
+test("GIVEN an invalid scope WHEN requesting sync THEN it fails before syncing the hub", () => {
+  const directory = mkdtempSync(join(tmpdir(), "factory-sync-invalid-"));
+  try {
+    const hub = hubWithProject(directory, join(directory, "absent.git"));
+    for (const args of [["--hub", "--project", "unknown"], ["--project"], ["--all", "--hub"], ["--wat"]]) {
+      const result = scopedSync(hub, ...args);
+      assert.equal(result.status, 2, result.stdout + result.stderr);
+      assert.doesNotMatch(result.stdout, /Sync:/);
+    }
+  } finally { rmSync(directory, { recursive: true, force: true }); }
+});
+
+test("GIVEN local changes or an unpublished branch WHEN syncing THEN local work is preserved and incomplete sync fails explicitly", () => {
+  const directory = mkdtempSync(join(tmpdir(), "factory-sync-preserve-"));
+  try {
+    const remote = repository(directory, "site", "initial");
+    const hub = hubWithProject(directory, remote.bare);
+    const site = join(hub, "projects/startups/site");
+    run("git", ["clone", "-q", remote.bare, site], directory);
+    writeFileSync(join(site, "draft.txt"), "owner work");
+    let result = scopedSync(hub, "--project", "site");
+    assert.equal(result.status, 1, result.stdout + result.stderr);
+    assert.match(result.stderr, /local changes, skipped/);
+    assert.equal(readFileSync(join(site, "draft.txt"), "utf8"), "owner work");
+    git(site, "add", "draft.txt");
+    git(site, "commit", "-q", "-m", "local work");
+    git(site, "checkout", "-q", "-b", "unpublished");
+    const before = git(site, "rev-parse", "HEAD");
+    result = scopedSync(hub, "--project", "site");
+    assert.equal(result.status, 1, result.stdout + result.stderr);
+    assert.match(result.stderr, /remote branch missing or origin inaccessible/);
+    assert.equal(git(site, "rev-parse", "HEAD"), before);
+    assert.equal(git(site, "branch", "--show-current").trim(), "unpublished");
+    git(site, "checkout", "-q", "--detach");
+    result = scopedSync(hub, "--project", "site");
+    assert.equal(result.status, 1, result.stdout + result.stderr);
+    assert.match(result.stderr, /detached HEAD, skipped/);
   } finally { rmSync(directory, { recursive: true, force: true }); }
 });
