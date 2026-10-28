@@ -56,6 +56,18 @@ configured private GitHub repository for reading on a phone, with the same
 workflow for Claude and Codex. Nothing is exported or published by default;
 see [reading editions](template/docs/sprowi.md#reading-the-ideas-away-from-your-computer).
 
+## Agent skills
+
+`scripts/init.sh` automatically installs the deployment, Sprowi task and idea
+review skills for your configured Claude Code, Codex or OpenCode agents.
+The deployment skill comes with the Startup CLI; the other two are installed
+with `gh skills` from your local Factory files. If prompted, update
+GitHub CLI. After setting up an agent later, rerun `scripts/init.sh`, then start
+a new agent session.
+
+Additional integrations from the [skills repository](https://github.com/Deploy-your-Startup/skills)
+are optional and are not installed automatically.
+
 ## Update an existing factory
 
 From the factory's clean, committed Git root:

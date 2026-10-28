@@ -94,8 +94,12 @@ registry_deployed="$("$script_dir/registry.sh" deployed)" || exit 1
 # --- Phase 2: Install CLI and hub skills ---
 # A first-time setup may have no coding agent yet; that is not an error.
 has_agent=0
-for agent_dir in .claude .codex .config/opencode; do
-  [ -d "$HOME/$agent_dir" ] && has_agent=1
+factory_agents=()
+for agent_entry in '.claude:claude-code' '.codex:codex' '.config/opencode:opencode'; do
+  if [ -d "$HOME/${agent_entry%%:*}" ]; then
+    has_agent=1
+    factory_agents+=("${agent_entry#*:}")
+  fi
 done
 if [ "$has_agent" -eq 1 ]; then
   echo "Installing the CLI's deploy-your-startup skill..."
@@ -108,17 +112,22 @@ fi
 
 echo "Installing startup-factory skills..."
 
-if command -v npx &>/dev/null; then
-  for skill in sprowi-task idea-personas; do
-    echo -n "  ⟳ $skill — installing... "
-    if npx --yes skills add "$root_dir" --skill "$skill" -a claude-code -a codex -a opencode --copy -y >/dev/null 2>&1; then
-      echo -e "${GREEN}done${NC}"
-    else
-      echo -e "${RED}failed${NC}"
-    fi
-  done
+if [ "$has_agent" -eq 0 ]; then
+  echo "  - After setting up your coding agent, rerun scripts/init.sh to install Factory skills."
 else
-  echo -e "  ${YELLOW}⊘${NC} npx — skipping skill installation"
+  if ! gh skill install --help >/dev/null 2>&1; then
+    echo "Factory skills need a newer GitHub CLI with gh skills support. Update gh and rerun scripts/init.sh." >&2
+    exit 1
+  fi
+  for skill in sprowi-task idea-personas; do
+    for agent in "${factory_agents[@]}"; do
+      echo "  Installing $skill for $agent..."
+      if ! (cd "$root_dir" && gh skills install "$root_dir" "$skill" --from-local --agent "$agent" --scope project --force); then
+        echo "Factory skill installation failed. Fix the error above and rerun scripts/init.sh." >&2
+        exit 1
+      fi
+    done
+  done
 fi
 
 echo ""

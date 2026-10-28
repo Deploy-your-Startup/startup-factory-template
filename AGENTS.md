@@ -23,3 +23,13 @@ provisioning, paid engines or Docker Sandbox execution. Report uncovered flows
 and failed/skipped checks. Keep the separate CLI's required macOS onboarding E2E
 gate enabled. Before release, review documentation, license, CLI compatibility,
 public refs and template contents together. Use immutable release tags.
+
+## User-facing writing
+
+Write Factory READMEs, setup instructions and command output for people using
+the Factory, not for its maintainers. Keep them short: explain the benefit,
+what happens automatically and the next action the user needs to take.
+Keep contribution workflows and implementation details in contributor docs;
+include them in user instructions only when needed to complete a task.
+Describe available behavior accurately; do not present planned skills or
+integrations as released features.

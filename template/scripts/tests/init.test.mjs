@@ -1,11 +1,12 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, mkdtempSync, mkdirSync, writeFileSync, copyFileSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, mkdirSync, writeFileSync, copyFileSync, cpSync, readFileSync, rmSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 
-test("GIVEN an empty registry and Codex WHEN init runs THEN the real CLI installs its skill and only Sprowi uses the external installer", () => {
+for (const scenario of ["success", "old-gh", "installation-failure"]) {
+test(`GIVEN Codex and ${scenario} WHEN init runs THEN Factory skills install locally or setup reports the error`, () => {
   const directory = mkdtempSync(join(tmpdir(), "factory-init-skills-"));
   try {
     const root = new URL("../../", import.meta.url);
@@ -21,16 +22,21 @@ test("GIVEN an empty registry and Codex WHEN init runs THEN the real CLI install
     writeFileSync(join(directory, "projects.yaml"), "projects: []\ntooling: []\n");
     const quote = (value) => "'" + value.replaceAll("'", "'\\''") + "'";
     // Use the actual installed CLI and YAML parser; isolate all account access.
-    for (const name of ["startup", "yq", "dirname", "head"]) {
+    for (const name of ["startup", "yq", "dirname", "head", "gh"]) {
       const found = spawnSync("which", [name === "startup" ? (process.env.STARTUP_TEST_EXECUTABLE || (existsSync(join(homedir(), ".local/share/startup/commands/startup")) ? join(homedir(), ".local/share/startup/commands/startup") : name)) : name], { encoding: "utf8" });
       assert.equal(found.status, 0, `${name} is required for this integration test`);
       writeFileSync(join(binaries, name), `#!/bin/bash\nexec ${quote(found.stdout.trim())} "$@"\n`, { mode: 0o755 });
     }
-    for (const name of ["kubectl", "uv", "gh", "git", "mise"]) {
+    for (const name of ["kubectl", "uv", "git", "mise"]) {
       writeFileSync(join(binaries, name), '#!/bin/bash\n[ "$1" = --version ] || exit 90\necho test-boundary\n', { mode: 0o755 });
     }
-    const calls = join(directory, "installer-calls");
-    writeFileSync(join(binaries, "npx"), `#!/bin/bash\nprintf '%s\\n' "$*" >> ${quote(calls)}\n`, { mode: 0o755 });
+    cpSync(new URL("skills/", root), join(directory, "skills"), { recursive: true });
+    // A new optional skill must not become part of the automatic installation.
+    mkdirSync(join(directory, "skills/optional-example"));
+    writeFileSync(join(directory, "skills/optional-example/SKILL.md"), "---\nname: optional-example\ndescription: Optional example\n---\n# Optional\n");
+    if (scenario !== "success") {
+      writeFileSync(join(binaries, "gh"), `#!/bin/bash\n[ "$1" = --version ] && { echo test-gh; exit 0; }\n${scenario === "old-gh" ? "exit 1" : '[ "$1 $2 $3" = "skill install --help" ] && exit 0; echo installation-denied >&2; exit 1'}\n`, { mode: 0o755 });
+    }
     // WHEN the real init script completes against the isolated empty registry.
     const result = spawnSync("/bin/bash", [join(scripts, "init.sh")], {
       cwd: directory,
@@ -38,19 +44,31 @@ test("GIVEN an empty registry and Codex WHEN init runs THEN the real CLI install
       encoding: "utf8",
       timeout: 30000,
     });
+    if (scenario !== "success") {
+      assert.equal(result.status, 1, result.stdout + result.stderr);
+      assert.match(result.stdout + result.stderr, scenario === "old-gh" ? /Update gh and rerun/ : /installation-denied/);
+      assert.doesNotMatch(result.stdout, /Cloning projects|Done! Projects/);
+      return;
+    }
     // THEN the installed content comes from the CLI and no legacy skill is requested.
     assert.equal(result.status, 0, result.stdout + result.stderr);
     const bundled = spawnSync(join(binaries, "startup"), ["skills", "show"], { encoding: "utf8" });
     assert.equal(bundled.status, 0, bundled.stderr);
     assert.equal(readFileSync(join(directory, ".agents/skills/deploy-your-startup/SKILL.md"), "utf8"), bundled.stdout);
-    assert.match(readFileSync(calls, "utf8"), /^--yes skills add .*--skill sprowi-task /);
-    assert.match(readFileSync(calls, "utf8"), /--skill idea-personas /);
-    assert.doesNotMatch(readFileSync(calls, "utf8"), /spawn-startup|deploy-your-startup/);
+    for (const skill of ["sprowi-task", "idea-personas"]) {
+      const installed = readFileSync(join(directory, ".agents/skills", skill, "SKILL.md"), "utf8");
+      const source = readFileSync(join(directory, "skills", skill, "SKILL.md"), "utf8");
+      assert.ok(installed.includes(source.slice(source.indexOf("\n# "))));
+    }
+    assert.equal(existsSync(join(directory, ".agents/skills/optional-example")), false);
+    assert.equal(existsSync(join(directory, ".claude/skills")), false);
+    assert.equal(existsSync(join(directory, ".opencode/skills")), false);
     assert.match(result.stdout, /Done! Projects are in/);
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
 });
+}
 
 test("GIVEN missing tools WHEN running init THEN it stops before setup and offers a pinned Git installation", () => {
   const directory = mkdtempSync(join(tmpdir(), "factory-init-"));
@@ -105,6 +123,8 @@ test("GIVEN the required tools but no kubectl WHEN init runs THEN setup complete
     for (const name of ["uv", "gh", "git", "mise"]) {
       writeFileSync(join(binaries, name), '#!/bin/bash\n[ "$1" = --version ] || exit 90\necho test-boundary\n', { mode: 0o755 });
     }
+    const installerCalls = join(directory, "installer-calls");
+    writeFileSync(join(binaries, "npx"), `#!/bin/bash\nprintf 'unexpected call' > ${quote(installerCalls)}\nexit 91\n`, { mode: 0o755 });
     // WHEN the real init script runs without kubectl on PATH.
     const result = spawnSync("/bin/bash", [join(scripts, "init.sh")], {
       cwd: directory,
@@ -119,6 +139,8 @@ test("GIVEN the required tools but no kubectl WHEN init runs THEN setup complete
     // A first setup without a coding agent or deployed projects reports no errors.
     assert.match(result.stdout, /No coding agent found\. After installing one, run: startup skills install/);
     assert.doesNotMatch(result.stdout + result.stderr, /Error:|failed/);
+    assert.match(result.stdout, /After setting up your coding agent, rerun scripts\/init.sh/);
+    assert.equal(existsSync(installerCalls), false);
     assert.doesNotMatch(result.stdout, /vault password/);
     assert.match(result.stdout, /Done! Projects are in/);
   } finally {
