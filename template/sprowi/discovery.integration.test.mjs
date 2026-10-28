@@ -18,8 +18,8 @@ function fixture(engine = "claude") {
   mkdirSync(join(factory, "scripts"));
   for (const name of ["sprowi.sh", "check-ideas.mjs"]) cpSync(new URL(`scripts/${name}`, source), join(factory, "scripts", name));
   writeFileSync(join(factory, "projects.yaml"), "projects: []\ntooling: []\n");
-  writeFileSync(join(factory, "VISION.md"), "Test ideas with users before building.\n");
-  writeFileSync(join(factory, ".gitignore"), "/sprowi/runs/\n/sprowi/discovery/state/\n/projects/\n");
+  writeFileSync(join(factory, "VISION.md"), "Build a small web product, distribute it and learn from real use.\n");
+  writeFileSync(join(factory, ".gitignore"), "/sprowi/runs/\n/sprowi/tasks/\n/sprowi/discovery/state/\n/projects/\n");
   mkdirSync(join(factory, "projects/startups/board-club/docs"), { recursive: true });
   writeFileSync(join(factory, "projects/startups/board-club/docs/product.md"), "# board-club product\n\n## What it is\n\nFriends draw one board game a month.\n");
   const configPath = join(factory, "sprowi/config.default.json");
@@ -78,13 +78,16 @@ if(prompt.startsWith('Review')){
  const duplicate=existsSync(${JSON.stringify(join(root, "duplicate-rank"))});
  for(let i=1;i<=3;i++){
   let text='# Distinct customer problem '+i+'\\n';
-  for(const h of ['Problem','Evidence','Distribution','Smallest test','Assumption','If validated','Why it might fail','Rationale']){
-   text+='\\n## '+h+'\\n\\nIf at least five of ten participants commit within three days, test a different customer problem '+i+' before building. Source: https://example.invalid/evidence\\n';
+  const headings=['Problem','Evidence','Distribution','Smallest test','Assumption','If validated','Why it might fail','Rationale'];
+  if(!existsSync(${JSON.stringify(join(root, "paper-only"))}))headings.push('Web experiment');
+  for(const h of headings){
+   text+='\\n## '+h+'\\n\\n'+(h==='Web experiment'?'A small web app takes one input and returns a useful result. Use the supported Factory template and deploy with startup after owner approval, then share the URL through a permitted audience channel. Record core_action_completed for eligible visitors.':'If at least five of ten eligible visitors complete the core action in the web app within three days, test customer problem '+i+'. Source: https://example.invalid/evidence')+'\\n';
   }
   text+='\\n## Rank\\n\\n'+(duplicate?1:i)+'\\n';
   writeFileSync('ideas/00'+i+'-customer-'+i+'.md',text);
  }
 }
+
 if(process.argv[1].endsWith('codex'))console.log(JSON.stringify({type:'turn.completed',usage:{input_tokens:40,output_tokens:20}}));
 else{
  console.log(JSON.stringify({type:'assistant',message:{usage:{input_tokens:40,output_tokens:20}}}));
@@ -96,15 +99,46 @@ else{
   writeFileSync(research, JSON.stringify({ sources: [{ url: "https://example.invalid/evidence", title: "A real fixture complaint", text: "Operators repeatedly enter the same data manually and ask how to avoid the duplicated work.", observedAt: "2026-01-01T09:00:00Z" }] }));
   const env = { ...process.env, PATH: `${bin}:${process.env.PATH}`, GIT_CONFIG_GLOBAL: "/dev/null", GIT_CONFIG_NOSYSTEM: "1", TZ: "UTC" };
   for (const key of Object.keys(env)) if (key.startsWith("SPROWI_")) delete env[key];
-  const run = (args, extra = {}) => new Promise((resolve) => {
-    const child = spawn(process.execPath, [join(factory, "sprowi/cli.mjs"), "discover", ...args], { cwd: factory, env: { ...env, ...extra } });
+  const invoke = (args, extra = {}) => new Promise((resolve) => {
+    const child = spawn(process.execPath, [join(factory, "sprowi/cli.mjs"), ...args], { cwd: factory, env: { ...env, ...extra } });
     let stdout = "", stderr = "";
     child.stdout.on("data", (chunk) => { stdout += chunk; }); child.stderr.on("data", (chunk) => { stderr += chunk; });
     const timeout = setTimeout(() => child.kill("SIGKILL"), 30000);
     child.on("close", (status) => { clearTimeout(timeout); resolve({ status, stdout, stderr }); });
   });
-  return { root, factory, research, run, git, close: () => rmSync(root, { recursive: true, force: true }) };
+  const run = (args, extra) => invoke(["discover", ...args], extra);
+  return { root, factory, research, run, ideas: () => invoke(["ideas"]), git, close: () => rmSync(root, { recursive: true, force: true }) };
 }
+
+test("GIVEN the ordinary ideas command WHEN it creates and runs a brief THEN the agent receives the same small web-build direction without deployment authority", async () => {
+  const f = fixture();
+  try {
+    const result = await f.ideas();
+    assert.equal(result.status, 0, result.stdout + result.stderr);
+    const tasks = join(f.factory, "sprowi/tasks/startup-factory");
+    const brief = readFileSync(join(tasks, readdirSync(tasks)[0], "task.md"), "utf8");
+    assert.match(brief, /small website or web app/);
+    assert.match(brief, /up to three days of building/);
+    assert.match(brief, /grants no permission to build, contact or deploy/);
+    assert.doesNotMatch(brief, /Anything needing new infrastructure, a new service/);
+    assert.match(readFileSync(join(f.root, "prompts.log"), "utf8"), /actual use, return visits or payment/);
+    assert.match(readFileSync(join(f.root, "prompts.log"), "utf8"), /an interactive\s+checklist can be a product feature/);
+  } finally { f.close(); }
+});
+
+test("GIVEN proposals with no Web experiment WHEN discovery reviews and archives them THEN the host refuses a paper-only batch despite a passing model review", async () => {
+  const f = fixture();
+  try {
+    writeFileSync(join(f.root, "paper-only"), "omit the web experiment");
+    const result = await f.run(["run", "--date", "2026-01-01", "--research-file", f.research]);
+    assert.equal(result.status, 1, result.stdout + result.stderr);
+    assert.match(result.stderr, /missing or thin Web experiment/);
+    assert.equal(existsSync(join(f.factory, "sprowi/discovery/state/history/2026-01-01/batch.json")), false);
+    assert.equal(existsSync(join(f.factory, "discovery")), false);
+    const attempts = join(f.factory, "sprowi/discovery/state/attempts");
+    assert.equal(JSON.parse(readFileSync(join(attempts, readdirSync(attempts)[0], "attempt.json"), "utf8")).status, "failed");
+  } finally { f.close(); }
+});
 
 for (const engine of ["claude", "codex"]) {
   test(`GIVEN ${engine} and current sbx create flags WHEN the real discovery CLI runs twice THEN one checked ranked batch is archived without changing source ideas`, async () => {
@@ -122,6 +156,10 @@ for (const engine of ["claude", "codex"]) {
       assert.equal(f.git("status", "--porcelain"), "", "Daily inputs and results must all remain private and gitignored.");
       const calls = readFileSync(join(f.root, "prompts.log"), "utf8");
       assert.match(calls, /NEW markets are allowed/); assert.match(calls, /Provided research is supplied evidence/);
+      assert.match(calls, /## Web experiment/);
+      assert.match(calls, /build, instrument and ship/);
+      assert.match(calls, /Reject a paper\/PDF checklist/);
+      assert.match(calls, /eligible audience and time anchor/);
       assert.match(calls, /"project": "board-club"/); assert.match(calls, /Friends draw one board game a month/);
       const again = await f.run(["run", "--date", "2026-01-01", "--research-file", f.research]);
       assert.equal(again.status, 0); assert.match(again.stdout, /Already complete/);
@@ -149,6 +187,8 @@ test("GIVEN enabled reading export WHEN a new batch completes THEN the common ru
     assert.equal(result.status, 0, result.stdout + result.stderr);
     assert.match(result.stdout, /DISCOVERY_READING/);
     assert.match(readFileSync(join(f.factory, "discovery/README.md"), "utf8"), /Distinct customer problem 1/);
+    assert.match(readFileSync(join(f.factory, "discovery/README.md"), "utf8"), /\*\*Web experiment:\*\*/);
+    assert.match(readFileSync(join(f.factory, "discovery/2026-01-01/README.md"), "utf8"), /core_action_completed/);
     const archive = join(f.factory, "sprowi/discovery/state/history/2026-01-01");
     assert.equal(JSON.parse(readFileSync(join(archive, "batch.json"), "utf8")).status, "complete");
     assert.equal(readFileSync(join(f.factory, "discovery/2026-01-01/ideas/001-customer-1.md"), "utf8"), readFileSync(join(archive, "ideas/001-customer-1.md"), "utf8"));
