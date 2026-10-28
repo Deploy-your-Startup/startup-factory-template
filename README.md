@@ -56,12 +56,12 @@ configured private GitHub repository for reading on a phone, with the same
 workflow for Claude and Codex. Nothing is exported or published by default;
 see [reading editions](template/docs/sprowi.md#reading-the-ideas-away-from-your-computer).
 
-## Optional integrations
+## Shared skills tooling
 
-The generated Factory links to [shared skills](https://github.com/Deploy-your-Startup/skills),
-including `factory-maestri` for a local portfolio canvas with connected agent
-notes and a reusable layout. Skills are installed explicitly; Maestri and Claude
-authentication are separate setup steps. See the generated README for installation.
+New factories include the [shared skills repository](https://github.com/Deploy-your-Startup/skills)
+in their tooling registry so owners can inspect and contribute reusable agent
+skills. Registering the repository does not install or activate any skill.
+See the repository for available skills and their installation instructions.
 
 ## Update an existing factory
 
