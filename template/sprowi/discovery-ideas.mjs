@@ -61,7 +61,8 @@ export function existingTitles() {
 }
 
 function loadBatch(day) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || !Number.isFinite(Date.parse(day)) || new Date(day).toISOString().slice(0, 10) !== day) throw new Error("Date must be a real YYYY-MM-DD date.");
+  const date = day.slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}(?:-[1-9]\d*)?$/.test(day) || !Number.isFinite(Date.parse(date)) || new Date(date).toISOString().slice(0, 10) !== date) throw new Error("Batch must be a real YYYY-MM-DD date, optionally with -N.");
   const directory = join(history, day);
   const batch = readJson(safePath(hubRoot, join(directory, "batch.json")));
   if (batch.status !== "complete" || batch.day !== day || !Array.isArray(batch.ideas) || batch.ideas.length !== 3) throw new Error("Filing requires a complete three-idea batch.");
