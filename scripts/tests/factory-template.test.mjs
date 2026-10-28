@@ -72,13 +72,13 @@ test("GIVEN a generated factory with owner data WHEN previewing and applying the
     const discovery = JSON.parse(readFileSync(discoveryConfig, "utf8"));
     discovery.language = "Owner language";
     discovery.preferences = ["Owner's private audience"];
-    discovery.reading = { enabled: true, publish: false, repository: "example-owner/private-factory" };
+    discovery.publish = { enabled: false, repository: "example-owner/private-factory" };
     writeFileSync(discoveryConfig, JSON.stringify(discovery));
     const privateHistory = join(factory, "sprowi/discovery/state/history");
     mkdirSync(privateHistory, { recursive: true });
     writeFileSync(join(privateHistory, "owner-note.txt"), "Private decisions survive updates\n");
     mkdirSync(join(factory, "discovery/2025-01-01"), { recursive: true });
-    // Reading exports wrap source URLs in angle brackets, as CommonMark allows.
+    // Older reading exports wrapped source URLs in angle brackets, as CommonMark allows.
     const edition = "Owner reading edition\n\n[Source 1](<https://news.ycombinator.com/item?id=50193416>)\n";
     writeFileSync(join(factory, "discovery/2025-01-01/README.md"), edition);
     writeFileSync(join(factory, "owner-notes.md"), "Only this instance\n");
@@ -130,7 +130,7 @@ test("GIVEN a generated factory with owner data WHEN previewing and applying the
 });
 
 
-test("GIVEN an owner reading repository in template defaults WHEN validating THEN automatic publication is rejected", () => {
+test("GIVEN an owner idea repository in template defaults WHEN validating THEN automatic publication is rejected", () => {
   const temp = mkdtempSync(join(tmpdir(), "factory-reading-privacy-"));
   try {
     copySource(temp);
@@ -138,10 +138,10 @@ test("GIVEN an owner reading repository in template defaults WHEN validating THE
     cpSync(join(root, "scripts/validate-template.py"), join(temp, "scripts/validate-template.py"));
     const path = join(temp, "template/sprowi/discovery/config.json");
     const config = JSON.parse(readFileSync(path, "utf8"));
-    config.reading = { enabled: true, publish: true, repository: "example-owner/private-factory" };
+    config.publish = { enabled: true, repository: "example-owner/private-factory" };
     writeFileSync(path, JSON.stringify(config));
     const result = spawnSync(python, [join(temp, "scripts/validate-template.py")], { encoding: "utf8" });
-    assert.notEqual(result.status, 0); assert.match(result.stderr, /must not enable owner reading/);
+    assert.notEqual(result.status, 0); assert.match(result.stderr, /must not enable owner idea publication/);
   } finally { rmSync(temp, { recursive: true, force: true }); }
 });
 

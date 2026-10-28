@@ -50,11 +50,11 @@ Discovery describes these plans and does not build or deploy them automatically.
 `--install` enables it after owner authorization. No Codex app is required for
 the Claude engine. See the generated [discovery guide](template/docs/sprowi.md#daily-discovery-with-claude-or-codex)
 for prerequisites, research-source limits and verification boundaries.
-An opt-in reading export creates a linked `discovery/` morning overview and
-dated proposals. It can commit and push those copies to the owner's explicitly
-configured private GitHub repository for reading on a phone, with the same
-workflow for Claude and Codex. Nothing is exported or published by default;
-see [reading editions](template/docs/sprowi.md#reading-the-ideas-away-from-your-computer).
+Each completed batch lands in `ideas/` next to hand-written ideas, under the
+next free numbers, and is committed there, so every idea goes through the same
+`idea-personas` review and `select`. Pushing those commits to the owner's
+explicitly configured private GitHub repository, for reading on a phone, is
+opt-in; see [where the ideas go](template/docs/sprowi.md#where-the-ideas-go).
 
 ## Agent skills
 

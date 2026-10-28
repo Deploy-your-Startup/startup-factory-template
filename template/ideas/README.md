@@ -1,6 +1,8 @@
 # Ideas
 
-One file per idea, `NNN-slug.md`, written by Sprowi or by hand. The format is
+The one collection of ideas: one file per idea, `NNN-slug.md`, written by hand,
+by `scripts/sprowi.sh ideas` or by daily discovery, which adds its three
+proposals under the next free numbers. The format is
 enforced by `scripts/check-ideas.mjs`, which is also what verifies a Sprowi run:
 
 - `# ` heading — the idea in one sentence

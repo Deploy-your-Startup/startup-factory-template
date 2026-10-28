@@ -5,24 +5,24 @@ import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, 
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-// Real CLI, archives, filesystem and local/bare Git repositories. Only GitHub's
+// Real CLI, archives, ideas/ files, filesystem and local/bare Git repositories. Only GitHub's
 // metadata API is replaced; these scenarios do not establish live OAuth access.
 function fixture() {
-  const root = mkdtempSync(join(tmpdir(), "factory-reading-test-"));
+  const root = mkdtempSync(join(tmpdir(), "factory-ideas-test-"));
   const factory = join(root, "factory"), bin = join(root, "bin");
   mkdirSync(factory); mkdirSync(bin);
   cpSync(new URL("./", import.meta.url), join(factory, "sprowi"), { recursive: true, filter: (path) => !/\/(state|runs|experiments)(\/|$)/.test(path) });
   writeFileSync(join(factory, ".gitignore"), "/sprowi/discovery/state/\n");
-  const env = { ...process.env, PATH: `${bin}:${process.env.PATH}`, GIT_CONFIG_GLOBAL: "/dev/null", GIT_CONFIG_NOSYSTEM: "1", GIT_AUTHOR_NAME: "Reading test", GIT_AUTHOR_EMAIL: "test@example.invalid", GIT_COMMITTER_NAME: "Reading test", GIT_COMMITTER_EMAIL: "test@example.invalid" };
+  const env = { ...process.env, PATH: `${bin}:${process.env.PATH}`, GIT_CONFIG_GLOBAL: "/dev/null", GIT_CONFIG_NOSYSTEM: "1", GIT_AUTHOR_NAME: "Ideas test", GIT_AUTHOR_EMAIL: "test@example.invalid", GIT_COMMITTER_NAME: "Ideas test", GIT_COMMITTER_EMAIL: "test@example.invalid" };
   const exec = (name, args, cwd = factory) => spawnSync(name, args, { cwd, env, encoding: "utf8" });
   const git = (...args) => { const r = exec("git", args); assert.equal(r.status, 0, r.stderr); return r.stdout.trim(); };
   git("init", "-q", "-b", "main"); git("config", "commit.gpgsign", "false");
   const configPath = join(factory, "sprowi/discovery/config.json");
-  const configure = (reading) => {
-    const c = JSON.parse(readFileSync(configPath)); c.reading = reading;
+  const configure = (publish, key = "publish") => {
+    const c = JSON.parse(readFileSync(configPath)); delete c.publish; delete c.reading; c[key] = publish;
     writeFileSync(configPath, JSON.stringify(c));
   };
-  configure({ enabled: false, publish: false, repository: "example/private-factory" });
+  configure({ enabled: false, repository: "example/private-factory" });
   git("add", "."); git("commit", "-qm", "factory fixture");
   const remote = join(root, "origin.git");
   assert.equal(exec("git", ["init", "--bare", "-q", "-b", "main", remote]).status, 0);
@@ -34,14 +34,14 @@ appendFileSync(${JSON.stringify(calls)},JSON.stringify(process.argv.slice(2))+'\
 const value=JSON.parse(readFileSync(${JSON.stringify(metadata)}));
 if(value.denied){console.error('synthetic GitHub access denied');process.exit(1);}
 console.log(JSON.stringify(value));\n`, { mode: 0o755 });
-  const archive = (day, extra = {}) => {
+  const archive = (day, extra = {}, prefix = "Customer problem") => {
     const path = join(factory, "sprowi/discovery/state/history", day);
     mkdirSync(join(path, "ideas"), { recursive: true });
     const ideas = [1, 2, 3].map((rank) => {
       const file = `00${rank}-problem-${rank}.md`;
-      const text = `# Customer problem ${rank}\n\n` + ["Problem", "Evidence", "Distribution", "Smallest test", "Assumption", "Why it might fail"].map((heading) => `## ${heading}\n\nIf at least four of eight customers use the paper workflow within three days, test this hypothesis. https://example.invalid/source-${rank}\n`).join("\n");
+      const text = `# ${prefix} ${rank}\n\n` + ["Problem", "Evidence", "Distribution", "Smallest test", "Assumption", "Why it might fail"].map((heading) => `## ${heading}\n\nIf at least four of eight customers use the paper workflow within three days, test this hypothesis. https://example.invalid/source-${rank}\n`).join("\n") + `\n## Rank\n\n${rank}\n`;
       writeFileSync(join(path, "ideas", file), text);
-      return { file, title: `Customer problem ${rank}`, rank };
+      return { file, title: `${prefix} ${rank}`, rank };
     });
     writeFileSync(join(path, "batch.json"), JSON.stringify({ day, status: "complete", verification: "verified", ideas, findings: [], researchErrors: [], ...extra }));
     for (const file of ["research.json", "usage.json", "result.json", "result.patch"]) writeFileSync(join(path, file), "PRIVATE-RAW-ARTIFACT");
@@ -52,57 +52,48 @@ console.log(JSON.stringify(value));\n`, { mode: 0o755 });
   return { root, factory, remote, metadata, calls, git, exec, configure, archive, run, close: () => rmSync(root, { recursive: true, force: true, maxRetries: 5 }) };
 }
 
-test("GIVEN complete batches WHEN exporting readings THEN linked ranked editions preserve earlier dates, findings and the raw private archive", () => {
+test("GIVEN complete batches and a hand-written idea WHEN filing THEN each proposal is added once under the next free number without its rank", () => {
   const f = fixture();
   try {
-    f.archive("2026-01-01", { verification: "verified-with-findings", findings: [{ rule: "Evidence", problem: "Demand is still uncertain" }], researchErrors: [{ url: "https://example.invalid/unavailable", error: "HTTP 503" }] });
-    const first = f.run("export", "--date", "2026-01-01");
+    const archive = f.archive("2026-01-01");
+    mkdirSync(join(f.factory, "ideas"));
+    writeFileSync(join(f.factory, "ideas/001-hand-written.md"), "# A hand-written idea\n");
+    const first = f.run("file", "--date", "2026-01-01");
     assert.equal(first.status, 0, first.stderr);
-    const destination = join(f.factory, "discovery"), date = join(destination, "2026-01-01");
-    assert.deepEqual(readdirSync(date).sort(), ["README.md", "ideas"]);
-    const report = readFileSync(join(date, "README.md"), "utf8");
-    assert.doesNotMatch(report, /\*\*Web experiment:\*\*/, "Legacy editions remain readable without a web plan.");
-    assert.match(report, /First ten participants/); assert.match(report, /Success \/ stop criteria/);
-    assert.match(report, /Demand is still uncertain/); assert.match(report, /Research errors: 1/);
-    assert.doesNotMatch(report, /PRIVATE-RAW|PRIVATE-FEEDBACK/);
-    for (const file of readdirSync(join(date, "ideas"))) {
-      assert.equal(readFileSync(join(date, "ideas", file), "utf8"), readFileSync(join(f.factory, "sprowi/discovery/state/history/2026-01-01/ideas", file), "utf8"));
-    }
-    for (const md of [join(destination, "README.md"), join(date, "README.md")]) {
-      for (const match of readFileSync(md, "utf8").matchAll(/\]\(([^)]+)\)/g)) {
-        if (!match[1].startsWith("<https:")) assert.ok(existsSync(join(md, "..", match[1])), match[1]);
-      }
-    }
-    const next = f.archive("2026-01-02");
-    const idea = join(next, "ideas/001-problem-1.md");
-    writeFileSync(idea, readFileSync(idea, "utf8") + "\n## Web experiment\n\nBuild an interactive website with one useful action, deploy through the Factory and record core_action_completed for eligible visitors.\n");
-    assert.equal(f.run("export", "--date", "2026-01-02").status, 0);
-    const index = readFileSync(join(destination, "README.md"), "utf8");
-    assert.match(index, /Latest · 2026-01-02/); assert.ok(index.indexOf("| [2026-01-02]") < index.indexOf("| [2026-01-01]"));
-    assert.match(index, /\*\*Web experiment:\*\*/); assert.match(index, /interactive website/);
-    assert.match(readFileSync(join(destination, "2026-01-02/README.md"), "utf8"), /core_action_completed/);
-    assert.equal(f.run("export", "--date", "2026-01-01").status, 0);
-    assert.equal(readFileSync(join(destination, "README.md"), "utf8"), index);
-    assert.equal(existsSync(f.calls), false, "Local export must not call GitHub.");
-    assert.equal(existsSync(join(f.factory, "sprowi/discovery/state/reading.lock")), false);
+    const ideas = join(f.factory, "ideas");
+    assert.deepEqual(readdirSync(ideas).sort(), ["001-hand-written.md", "002-problem-1.md", "003-problem-2.md", "004-problem-3.md"]);
+    const filed = readFileSync(join(ideas, "002-problem-1.md"), "utf8");
+    assert.match(filed, /^# Customer problem 1\n/); assert.doesNotMatch(filed, /## Rank|PRIVATE/);
+    assert.match(filed, /## Why it might fail/);
+    assert.equal(readFileSync(join(archive, "ideas/001-problem-1.md"), "utf8"), filed.replace(/\n$/, "") + "\n\n## Rank\n\n1\n", "The private archive keeps the proposal as generated.");
+    assert.deepEqual(JSON.parse(readFileSync(join(archive, "batch.json"), "utf8")).ideas.map((idea) => idea.filedAs), ["002-problem-1.md", "003-problem-2.md", "004-problem-3.md"]);
+    assert.equal(f.run("file", "--date", "2026-01-01").status, 0);
+    assert.equal(readdirSync(ideas).length, 4, "Refiling a date adds nothing.");
+    f.archive("2026-01-02", {}, "Later problem");
+    assert.equal(f.run("file", "--date", "2026-01-02").status, 0);
+    assert.deepEqual(readdirSync(ideas).sort().slice(4), ["005-problem-1.md", "006-problem-2.md", "007-problem-3.md"]);
+    assert.equal(f.git("status", "--porcelain"), "?? ideas/001-hand-written.md", "Filing commits only its own ideas.");
+    assert.equal(existsSync(join(f.factory, "discovery")), false);
+    assert.equal(existsSync(f.calls), false, "Local filing must not call GitHub.");
+    assert.equal(existsSync(join(f.factory, "sprowi/discovery/state/filing.lock")), false);
   } finally { f.close(); }
 });
 
-test("GIVEN a matching private origin WHEN publishing and retrying THEN only reading copies reach Git and the retry creates no commit", () => {
+test("GIVEN a matching private origin WHEN publishing and retrying THEN only the new ideas reach Git and the retry creates no commit", () => {
   const f = fixture();
   try {
     f.archive("2026-01-01");
     const before = f.git("rev-parse", "HEAD");
-    const result = f.run("export", "--date", "2026-01-01", "--publish");
-    assert.equal(result.status, 0, result.stderr); assert.match(result.stdout, /READING_PUBLISHED https:\/\/github.com\/example\/private-factory/);
+    const result = f.run("file", "--date", "2026-01-01", "--publish");
+    assert.equal(result.status, 0, result.stderr); assert.match(result.stdout, /IDEAS_PUBLISHED https:\/\/github.com\/example\/private-factory\/tree\/main\/ideas/);
     assert.equal(f.git("status", "--porcelain"), "");
     const after = f.git("rev-parse", "HEAD"); assert.notEqual(after, before);
     const changed = f.git("diff", "--name-only", before, after).split("\n");
-    assert.equal(changed.length, 5); assert.ok(changed.every((path) => path.startsWith("discovery/")));
+    assert.deepEqual(changed, ["ideas/001-problem-1.md", "ideas/002-problem-2.md", "ideas/003-problem-3.md"]);
     assert.equal(f.git("ls-remote", "origin", "refs/heads/main").split(/\s+/)[0], after);
-    assert.doesNotMatch(f.git("ls-tree", "-r", "--name-only", "HEAD", "--", "discovery", "sprowi/discovery/state"), /state\/|feedback|research\.json|usage\.json|result\.patch/);
+    assert.doesNotMatch(f.git("ls-tree", "-r", "--name-only", "HEAD", "--", "ideas", "sprowi/discovery/state"), /state\/|feedback|research\.json|usage\.json|result\.patch/);
     assert.equal(JSON.parse(readFileSync(f.calls, "utf8").trim().split("\n")[0])[2], f.remote, "Query the actual origin, not just the configured slug.");
-    const again = f.run("export", "--date", "2026-01-01", "--publish");
+    const again = f.run("file", "--date", "2026-01-01", "--publish");
     assert.equal(again.status, 0, again.stderr); assert.equal(f.git("rev-parse", "HEAD"), after);
   } finally { f.close(); }
 });
@@ -135,34 +126,34 @@ test("GIVEN denied access, a public or different origin, or unrelated work WHEN 
           for (const args of [["add", "."], ["-c", "commit.gpgsign=false", "commit", "-qm", "remote owner change"], ["push", "-q", "origin", "main"]]) assert.equal(f.exec("git", args, other).status, 0);
         }
         const status = f.git("status", "--porcelain"), head = f.git("rev-parse", "HEAD");
-        const result = f.run("export", "--date", "2026-01-01", "--publish");
+        const result = f.run("file", "--date", "2026-01-01", "--publish");
         assert.equal(result.status, 1, result.stdout); assert.ok(result.stderr.length);
-        assert.equal(existsSync(join(f.factory, "discovery")), false);
+        assert.equal(existsSync(join(f.factory, "ideas")), false);
         assert.equal(f.git("status", "--porcelain"), status); assert.equal(f.git("rev-parse", "HEAD"), head);
-        assert.equal(existsSync(join(f.factory, "sprowi/discovery/state/reading.lock")), false);
+        assert.equal(existsSync(join(f.factory, "sprowi/discovery/state/filing.lock")), false);
       } finally { f.close(); }
     });
   }
 });
 
-test("GIVEN a server refusing pushes WHEN publishing THEN the batch and local reading commit survive with an actionable retry error", () => {
+test("GIVEN a server refusing pushes WHEN publishing THEN the batch and local ideas commit survive with an actionable retry error", () => {
   const f = fixture();
   try {
     const archive = f.archive("2026-01-01"), remoteHead = f.git("rev-parse", "HEAD");
     assert.equal(f.exec("git", ["--git-dir", f.remote, "config", "core.bare", "false"]).status, 0);
     assert.equal(f.exec("git", ["--git-dir", f.remote, "config", "receive.denyCurrentBranch", "refuse"]).status, 0);
-    const failed = f.run("export", "--date", "2026-01-01", "--publish");
+    const failed = f.run("file", "--date", "2026-01-01", "--publish");
     assert.equal(failed.status, 1); assert.match(failed.stderr, /rejected|refusing/i);
     assert.equal(JSON.parse(readFileSync(join(archive, "batch.json"))).status, "complete");
     assert.notEqual(f.git("rev-parse", "HEAD"), remoteHead);
     assert.equal(f.git("ls-remote", "origin", "refs/heads/main").split(/\s+/)[0], remoteHead);
-    const again = f.run("export", "--date", "2026-01-01", "--publish");
+    const again = f.run("file", "--date", "2026-01-01", "--publish");
     assert.equal(again.status, 1); assert.match(again.stderr, /push existing commits yourself/);
-    assert.equal(existsSync(join(f.factory, "discovery/README.md")), true);
+    assert.equal(existsSync(join(f.factory, "ideas/001-problem-1.md")), true);
   } finally { f.close(); }
 });
 
-test("GIVEN invalid batches or unsafe paths WHEN exporting THEN no reading copy or GitHub request is produced", async (t) => {
+test("GIVEN invalid batches or unsafe paths WHEN filing THEN no idea file or GitHub request is produced", async (t) => {
   for (const scenario of ["incomplete", "filename", "ranks", "input-symlink", "output-symlink", "invalid-date", "concurrent"]) {
     await t.test(scenario, () => {
       const f = fixture();
@@ -176,28 +167,29 @@ test("GIVEN invalid batches or unsafe paths WHEN exporting THEN no reading copy 
         if (scenario === "input-symlink") {
           const file = join(path, "ideas", batch.ideas[0].file); rmSync(file); symlinkSync(join(f.factory, ".gitignore"), file);
         }
-        if (scenario === "output-symlink") symlinkSync(f.root, join(f.factory, "discovery"));
-        if (scenario === "concurrent") mkdirSync(join(f.factory, "sprowi/discovery/state/reading.lock"));
-        const result = f.run("export", "--date", scenario === "invalid-date" ? "2026-02-30" : "2026-01-01");
+        if (scenario === "output-symlink") symlinkSync(f.root, join(f.factory, "ideas"));
+        if (scenario === "concurrent") mkdirSync(join(f.factory, "sprowi/discovery/state/filing.lock"));
+        const result = f.run("file", "--date", scenario === "invalid-date" ? "2026-02-30" : "2026-01-01");
         assert.equal(result.status, 1, result.stdout);
-        assert.equal(existsSync(join(f.factory, "discovery/2026-01-01")), false);
+        assert.equal(existsSync(join(f.factory, "ideas/001-problem-1.md")), false);
+        assert.equal(existsSync(join(f.root, "001-problem-1.md")), false);
         assert.equal(existsSync(f.calls), false);
       } finally { f.close(); }
     });
   }
 });
 
-for (const engine of ["claude", "codex"]) {
-  test(`GIVEN ${engine} and enabled publication WHEN reusing a complete batch THEN the common run publishes without another model call`, () => {
+for (const [engine, key, publish] of [["claude", "publish", { enabled: true, repository: "example/private-factory" }], ["codex", "reading", { enabled: true, publish: true, repository: "example/private-factory" }]]) {
+  test(`GIVEN ${engine} and publication via ${key} WHEN reusing a complete batch THEN the common run publishes without another model call`, () => {
     const f = fixture();
     try {
       f.archive("2026-01-01");
-      f.configure({ enabled: true, publish: true, repository: "example/private-factory" });
+      f.configure(publish, key);
       const path = join(f.factory, "sprowi/discovery/config.json"), config = JSON.parse(readFileSync(path));
       config.engine = engine; writeFileSync(path, JSON.stringify(config));
-      f.git("add", "."); f.git("commit", "-qm", "enable reading publication"); f.git("push", "-q", "origin", "main");
+      f.git("add", "."); f.git("commit", "-qm", "enable idea publication"); f.git("push", "-q", "origin", "main");
       const result = f.run("run", "--date", "2026-01-01");
-      assert.equal(result.status, 0, result.stderr); assert.match(result.stdout, /Already complete/); assert.match(result.stdout, /READING_PUBLISHED/);
+      assert.equal(result.status, 0, result.stderr); assert.match(result.stdout, /Already complete/); assert.match(result.stdout, /IDEAS_PUBLISHED/);
       assert.equal(f.git("status", "--porcelain"), "");
     } finally { f.close(); }
   });
