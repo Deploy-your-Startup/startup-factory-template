@@ -33,8 +33,10 @@ and rerun the same command. Existing Factory files survive retries. Initializing
 the workspace creates no cloud resources. Bootstrap shows provider costs and
 asks before creating the application and infrastructure.
 
-Review the generated README, initialize Git and commit the files including
-`.copier-answers.yml` before updating the template. Startups created in
+The Factory becomes its own Git repository with a first commit, and onboarding
+offers a private GitHub backup (Startup CLI v0.1.37 or newer). For an earlier
+Factory without Git or GitHub, run `startup factory init --github --project-dir
+<folder>`. Template updates need this committed history. Startups created in
 `projects/startups` are registered automatically once their Git remote exists,
 including when bootstrap needs to resume. Deployment status remains unset until
 live verification. Sprowi is included but setup is optional:
