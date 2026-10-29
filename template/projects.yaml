@@ -21,6 +21,9 @@ tooling:
   - name: vue-django-template
     repo: https://github.com/Deploy-your-Startup/vue-django-template.git
     description: Vue, Django and FastAPI application template
+  - name: vue-nestjs-template
+    repo: https://github.com/Deploy-your-Startup/vue-nestjs-template.git
+    description: Plain Vue, NestJS and PostgreSQL application template
   - name: pitch-template
     repo: https://github.com/Deploy-your-Startup/pitch-template.git
     description: Astro landing page template
