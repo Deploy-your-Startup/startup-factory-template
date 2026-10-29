@@ -54,7 +54,7 @@ test("GIVEN a generated factory with owner data WHEN previewing and applying the
     assert.match(readFileSync(join(factory, "README.md"), "utf8"), /^# my-independent-workspace/);
     const registry = readFileSync(join(factory, "projects.yaml"), "utf8");
     assert.match(registry, /projects: \[\]/);
-    for (const name of ["cli", "deploy-template", "django-backend-template", "vue-django-template", "pitch-template"]) assert.ok(registry.includes(`name: ${name}`));
+    for (const name of ["cli", "deploy-template", "django-backend-template", "vue-django-template", "vue-nestjs-template", "pitch-template"]) assert.ok(registry.includes(`name: ${name}`));
     assert.ok(registry.includes("name: startup-factory-mod"));
     const claudeSettings = JSON.parse(readFileSync(join(factory, ".claude/settings.json"), "utf8"));
     assert.equal(claudeSettings.extraKnownMarketplaces["startup-factory-mod"].source.repo, "Deploy-your-Startup/startup-factory-mod");
