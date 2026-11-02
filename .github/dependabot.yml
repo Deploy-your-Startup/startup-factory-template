@@ -2,12 +2,13 @@ version: 2
 updates:
   # Actions are pinned to commit SHAs; Dependabot keeps the SHAs and their tag comments current.
   - package-ecosystem: github-actions
+    open-pull-requests-limit: 2
     directories:
       - "/"
       - "/template"
     schedule:
       interval: weekly
     groups:
-      github-actions:
-        patterns:
-          - "*"
+      routine-updates:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
