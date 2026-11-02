@@ -50,6 +50,9 @@ test("GIVEN a generated factory with owner data WHEN previewing and applying the
     const factory = join(temp, "my-independent-workspace");
     run(python, ["-m", "cli.startup", "factory", "init", "--template", source, "--version", "v1.0.0", "--project-dir", factory], temp);
     assert.match(readFileSync(join(factory, ".startup-factory.yml"), "utf8"), /schema: 1/);
+    const workflow = readFileSync(join(factory, ".github/workflows/check.yml"), "utf8");
+    assert.ok(workflow.includes("github.event.pull_request.number || github.run_id"));
+    assert.ok(workflow.includes("cancel-in-progress: ${{ github.event_name == 'pull_request' }}"));
     init(factory); git(factory, "remote", "add", "origin", "https://github.com/example-owner/my-factory.git");
     assert.match(readFileSync(join(factory, "README.md"), "utf8"), /^# my-independent-workspace/);
     const registry = readFileSync(join(factory, "projects.yaml"), "utf8");
