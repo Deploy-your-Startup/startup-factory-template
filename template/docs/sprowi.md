@@ -164,6 +164,15 @@ the host. Sprowi's sandbox cannot deploy. The implementation must make the KPI
 action observable in the app's existing database or an analytics export. This
 slice does not add a central tracking service or automatically publish posts.
 
+Experiment KPI dashboards, funnel results and event exports are internal owner
+tools by default. Keep their links and summaries out of public navigation and
+ordinary participant flows. Require server-side owner/staff authorization for
+pages, APIs and downloads; hiding a link is not access control. User-facing
+results should explain the user's own outcome. Expose aggregate metrics only
+when explicitly requested as a product feature. Acceptance checks must cover
+anonymous visitors, signed-in non-staff users and authorized owners, including
+direct URL access and navigation visibility.
+
 After the window, put the action count, sample size, observation date and data
 source (query, export or report URL) into `observation.json`, then run:
 
