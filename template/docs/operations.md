@@ -68,10 +68,19 @@ template updates; never run Ansible directly or edit `deployment/.shared-roles`.
   bootstrap resumes it.
 - Updates: `startup template update --version <release> --dry-run` in a clean
   repository, then apply, review, test and commit `.copier-answers.yml`. Factory
-  updates preserve the registry and Sprowi configuration. `startup sync` updates
-  shared deployment roles separately and does not advance existing role pins.
-  For all registered startups, preview with `scripts/update-templates.sh`, then
-  apply locally with `scripts/update-templates.sh --apply`.
+  updates preserve the registry and Sprowi configuration. For all registered
+  startups, preview with `scripts/update-templates.sh`, then apply locally with
+  `scripts/update-templates.sh --apply`.
+- Shared roles and workflows: each startup runs one immutable release of the
+  owner's `deploy-your-startup` repository and changes only when told to.
+  `startup update --check` in a startup shows its release and a newer one,
+  `startup update` adopts it, `startup update --version <release>` selects one
+  or goes back. It edits the role pin and workflow references and deploys
+  nothing: review, commit and push to roll out, one startup first.
+  `scripts/update-deployments.sh` shows every registered startup's release and
+  `--apply` moves the clean checkouts locally. `startup sync` also moves that
+  repository's `main`, which only startups referencing `@main` follow; ask
+  before running it.
 - Shared clusters: each application records its cluster in
   `deployment/cluster.yml` (`owner`, `nodes`) and `startup_cluster_owner`
   (`deployment/group_vars/all.yml`). Read them before checking pods, capacity or
