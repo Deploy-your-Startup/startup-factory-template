@@ -25,7 +25,7 @@ operation. Fix shared rules at their source instead of duplicating them here.
 | Task | Source |
 |---|---|
 | Code changes, checks, completion evidence | [Testing policy](docs/testing-policy.md) and the target repository's `AGENTS.md` |
-| Registry, setup, Git policy, template updates and portfolio operations | [Operations](docs/operations.md) |
+| Registry, setup, Git policy, template and shared deployment updates, portfolio operations | [Operations](docs/operations.md) |
 | Deployment, secrets, clusters, backups, upgrades and legal onboarding | `deploy-your-startup` skill; read before operating infrastructure |
 | Sprowi runs and publishing | [Sprowi](docs/sprowi.md); require owner authorization |
 

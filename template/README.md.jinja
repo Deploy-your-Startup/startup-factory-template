@@ -114,8 +114,19 @@ HEAD. Missing checkouts, repositories without Copier metadata and uncommitted
 changes are skipped. Review the diffs, resolve conflicts, run project checks and
 commit each update. The script does not pull, commit, push or deploy.
 
-`startup sync` handles shared deployment roles/workflows separately. Pulling this
-workspace with Git does not apply upstream Factory template changes.
+Shared deployment roles and workflows are updated separately, one release at a
+time. Each startup stays on its release until you move it:
+
+```bash
+./scripts/update-deployments.sh          # show each startup's release
+./scripts/update-deployments.sh --apply  # move clean checkouts to the latest
+```
+
+Nothing is deployed: commit and push a startup to roll its update out. In a
+single startup, use `startup update --check`, `startup update` and
+`startup update --version <release>` to go back.
+
+Pulling this workspace with Git does not apply upstream Factory template changes.
 
 ## Optional agent loop
 
