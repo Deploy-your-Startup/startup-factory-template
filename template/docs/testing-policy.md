@@ -36,7 +36,7 @@ credentials or environment they require without storing secrets.
 Run lint and all tests locally before completing code changes. Record failures
 and skips. Read `run_e2e` in the project workflow: `false` skips CI browser tests;
 `true` enables them.
-Dependabot PRs always run E2E in CI. See [the shared testing decision](https://github.com/Deploy-your-Startup/deploy-template/blob/main/docs/adr/0005-local-or-ci-e2e.md).
+Dependabot PRs always run E2E in CI. See [the shared testing decision](https://github.com/Deploy-your-Startup/deploy/blob/main/docs/adr/0005-local-or-ci-e2e.md).
 
 ## CI and release evidence
 
@@ -53,4 +53,4 @@ than removing required scenarios or hiding failures. Use the project's existing
 make.sh and mise commands; shared workflows consume the same service contracts.
 
 For concrete workflow triggers, skips and direct deployment exceptions, read the
-[E2E execution guide](https://github.com/Deploy-your-Startup/deploy-template/blob/main/docs/e2e-execution.md).
+[E2E execution guide](https://github.com/Deploy-your-Startup/deploy/blob/main/docs/e2e-execution.md).
