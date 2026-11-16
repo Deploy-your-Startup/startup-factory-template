@@ -8,7 +8,7 @@ import { spawnSync } from "node:child_process";
 const scripts = new URL("../", import.meta.url);
 const python = process.env.FACTORY_TEST_PYTHON || "python3";
 const quote = (value) => "'" + value.replaceAll("'", "'\\''") + "'";
-const shared = "example-owner/deploy-your-startup/.github/workflows/deploy.yml";
+const shared = "Deploy-your-Startup/deploy/.github/workflows/deploy.yml";
 // GitHub is the only stand-in: `gh` clones local bare repositories instead.
 const fakeGh = `#!/bin/bash
 if [ "$1 $2" = "repo clone" ]; then
@@ -38,8 +38,8 @@ function invoke(root, command, args, cwd = root) {
       ...process.env, PATH: `${join(root, "bin")}:${process.env.PATH}`, GIT_CONFIG_GLOBAL: "/dev/null", GIT_CONFIG_NOSYSTEM: "1",
       GIT_AUTHOR_NAME: "Factory integration", GIT_AUTHOR_EMAIL: "test@example.invalid",
       GIT_COMMITTER_NAME: "Factory integration", GIT_COMMITTER_EMAIL: "test@example.invalid",
-      TEST_REMOTES: join(root, "remotes"), STARTUP_ANSIBLE_REPO_OWNER: "example-owner",
-      STARTUP_ANSIBLE_REPO_URL: `file://${join(root, "remotes/deploy-your-startup.git")}`,
+      TEST_REMOTES: join(root, "remotes"),
+      STARTUP_ANSIBLE_REPO_URL: `file://${join(root, "remotes/deploy.git")}`,
     },
   });
 }
@@ -65,16 +65,16 @@ function repository(root, directory, files) {
   return directory;
 }
 
+// Deploy-your-Startup/deploy with one published, self-contained release.
 function remotes(root) {
-  const owner = "§§deploy_your_startup.github_username§§/§§deploy_your_startup.deploy_repo_name§§";
-  const template = repository(root, join(root, "sources/deploy-template"), {
-    ".github/workflows/deploy.yml": `jobs:\n  deploy:\n    steps:\n      - uses: ${owner}/.github/actions/deploy@main\n`,
+  const source = repository(root, join(root, "sources/deploy"), {
+    ".github/workflows/deploy.yml": "jobs:\n  deploy:\n    steps:\n      - uses: Deploy-your-Startup/deploy/.github/actions/deploy@v1.0.0\n",
     "roles/sample/tasks/main.yml": "- ansible.builtin.debug:\n    msg: reviewed\n",
   });
-  const copy = repository(root, join(root, "sources/deploy-your-startup"), { "README.md": "owner copy\n" });
+  git(root, source, "tag", "-a", "-m", "Release v1.0.0", "v1.0.0");
   mkdirSync(join(root, "remotes"));
-  for (const source of [template, copy]) git(root, root, "clone", "-q", "--bare", source, join(root, "remotes", `${source.split("/").pop()}.git`));
-  return join(root, "remotes/deploy-your-startup.git");
+  git(root, root, "clone", "-q", "--bare", source, join(root, "remotes/deploy.git"));
+  return join(root, "remotes/deploy.git");
 }
 
 function project(root, name, deployment = true) {
@@ -90,7 +90,7 @@ function registry(root, names) {
   writeFileSync(join(root, "projects.yaml"), `projects:\n${names.map((name) => `  - name: ${name}\n    repo: https://example.invalid/${name}.git`).join("\n")}\ntooling: []\n`);
 }
 
-test("GIVEN registered startups WHEN previewing and applying shared deployment updates THEN preview changes nothing and apply pins clean startups without moving the owner's main", () => {
+test("GIVEN registered startups WHEN previewing and applying shared deployment updates THEN preview changes nothing and apply pins clean startups to the published release without publishing anything", () => {
   const root = workspace();
   try {
     const copy = remotes(root);
@@ -103,22 +103,22 @@ test("GIVEN registered startups WHEN previewing and applying shared deployment u
 
     const preview = run(root, "bash", [join(root, "scripts/update-deployments.sh")], tmpdir());
 
-    assert.match(preview, /Update available: release source-[0-9a-f]{12}\./);
+    assert.match(preview, /Update available: release v1\.0\.0 of Deploy-your-Startup\/deploy\./);
     assert.match(preview, /landing — skipped: no deployment directory/);
     assert.match(preview, /absent — skipped: checkout missing/);
     assert.match(preview, /Summary \(preview\): 2 completed, 2 skipped, 0 failed/);
     assert.equal(git(root, healthy, "status", "--porcelain"), "");
-    assert.equal(git(root, copy, "tag"), "");
+    assert.equal(git(root, copy, "tag"), "v1.0.0");
 
     const applied = run(root, "bash", [join(root, "scripts/update-deployments.sh"), "--apply"]);
 
     assert.match(applied, /dirty — skipped: uncommitted changes/);
     assert.match(applied, /Summary \(apply\): 1 completed, 3 skipped, 0 failed/);
-    const release = git(root, copy, "tag");
-    const commit = git(root, copy, "rev-parse", release);
+    const release = "v1.0.0";
+    const commit = git(root, copy, "rev-parse", `${release}^{commit}`);
     assert.equal(readFileSync(join(healthy, "deployment/shared-roles.ref"), "utf8").trim(), commit);
     assert.equal(readFileSync(join(healthy, ".github/workflows/deploy.yml"), "utf8"), `jobs:\n  deploy:\n    uses: ${shared}@${commit} # ${release}\n`);
-    assert.match(git(root, copy, "show", `${release}:.github/workflows/deploy.yml`), new RegExp(`example-owner/deploy-your-startup/.github/actions/deploy@${release}`));
+    assert.equal(git(root, copy, "tag"), "v1.0.0");
     assert.equal(git(root, copy, "rev-parse", "main"), main);
     assert.equal(git(root, healthy, "rev-parse", "HEAD"), git(root, healthy, "rev-parse", "main"));
     assert.equal(existsSync(join(dirty, "deployment/shared-roles.ref")), false);

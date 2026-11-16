@@ -12,9 +12,9 @@ tooling:
   - name: cli
     repo: https://github.com/Deploy-your-Startup/cli.git
     description: Startup CLI and bundled agent skills
-  - name: deploy-template
-    repo: https://github.com/Deploy-your-Startup/deploy-template.git
-    description: Shared deployment roles and workflows
+  - name: deploy
+    repo: https://github.com/Deploy-your-Startup/deploy.git
+    description: Shared deployment workflows, actions and roles that startups pin
   - name: django-backend-template
     repo: https://github.com/Deploy-your-Startup/django-backend-template.git
     description: Django and FastAPI application template

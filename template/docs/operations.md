@@ -59,8 +59,8 @@ registry. Accurate `url`, `deployed` and `kubectl_context` values keep it correc
 
 ## Operating startups
 
-Use the `startup` CLI for Vault, Ansible, provisioning, deployment, sync and
-template updates; never run Ansible directly or edit `deployment/.shared-roles`.
+Use the `startup` CLI for Vault, Ansible, provisioning, deployment, shared
+deployment and template updates; never run Ansible directly or edit `deployment/.shared-roles`.
 
 - New startups: agree on the project and budget first, then run
   `startup bootstrap --output-dir projects/startups` and register the actual Git
@@ -72,15 +72,14 @@ template updates; never run Ansible directly or edit `deployment/.shared-roles`.
   startups, preview with `scripts/update-templates.sh`, then apply locally with
   `scripts/update-templates.sh --apply`.
 - Shared roles and workflows: each startup runs one immutable release of the
-  owner's `deploy-your-startup` repository and changes only when told to.
+  public `Deploy-your-Startup/deploy` and changes only when told to.
   `startup update --check` in a startup shows its release and a newer one,
   `startup update` adopts it, `startup update --version <release>` selects one
   or goes back. It edits the role pin and workflow references and deploys
   nothing: review, commit and push to roll out, one startup first.
   `scripts/update-deployments.sh` shows every registered startup's release and
-  `--apply` moves the clean checkouts locally. `startup sync` also moves that
-  repository's `main`, which only startups referencing `@main` follow; ask
-  before running it.
+  `--apply` moves the clean checkouts locally. A startup that still calls a
+  per-owner `deploy-your-startup` copy moves once with `startup migrate deploy`.
 - Shared clusters: each application records its cluster in
   `deployment/cluster.yml` (`owner`, `nodes`) and `startup_cluster_owner`
   (`deployment/group_vars/all.yml`). Read them before checking pods, capacity or
