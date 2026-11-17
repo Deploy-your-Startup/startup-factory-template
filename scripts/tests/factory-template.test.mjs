@@ -7,7 +7,8 @@ import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
-const python = process.env.FACTORY_TEST_PYTHON || "python3";
+const python = process.env.FACTORY_TEST_PYTHON;
+assert.ok(python, "Run mise run test to use the locked test runtime");
 function run(command, args, cwd, options = {}) {
   const result = spawnSync(command, args, { cwd, encoding: "utf8", timeout: 120000, ...options });
   assert.equal(result.status, 0, `${command} ${args.join(" ")}\n${result.stdout}\n${result.stderr}`);
@@ -125,10 +126,9 @@ test("GIVEN a generated factory with owner data WHEN previewing and applying the
     assert.match(readFileSync(join(factory, "README.md"), "utf8"), /new shared onboarding improvement/);
     assert.equal(readFileSync(join(factory, "owner-notes.md"), "utf8"), "Only this instance\n");
     assert.match(readFileSync(join(factory, ".copier-answers.yml"), "utf8"), /v1.1.0/);
-    const checks = files(join(factory, "scripts/tests")).concat(files(join(factory, "sprowi")).filter((file) => file.endsWith(".integration.test.mjs")));
     // Without the outer runner's context, the nested run reports and fails on its own.
     const { NODE_TEST_CONTEXT, ...env } = process.env;
-    run(process.execPath, ["--test", ...checks], factory, { env });
+    run("uv", ["run", "--locked", "python", "scripts/test.py"], factory, { env });
   } finally { rmSync(temp, { recursive: true, force: true }); }
 });
 

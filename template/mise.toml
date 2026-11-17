@@ -20,4 +20,4 @@ run = "scripts/registry.sh check"
 
 [tasks.test]
 description = "Check the Factory scripts and Sprowi workflows locally"
-run = "node --test scripts/tests/*.test.mjs sprowi/*.integration.test.mjs"
+run = "uv run --locked python scripts/test.py"

@@ -33,6 +33,12 @@ credentials or environment they require without storing secrets.
 
 ### Local and CI tests
 
+`mise run test` installs the committed CLI dependency and lockfile into a local
+virtual environment. The runner supplies that Python and CLI to integration
+tests; a globally installed Startup CLI is not required or used. Normal user
+commands keep using the globally installed CLI. Deployments use their own
+`deployment/pyproject.toml` and `uv.lock`; there is no CLI tool pin in mise.
+
 Run lint and all tests locally before completing code changes. Record failures
 and skips. Read `run_e2e` in the project workflow: `false` skips CI browser tests;
 `true` enables them.

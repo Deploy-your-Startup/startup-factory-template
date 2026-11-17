@@ -1,0 +1,12 @@
+[project]
+name = "factory-test-runtime"
+version = "0.1.0"
+requires-python = ">=3.14,<3.15"
+dependencies = ["deploy-your-startup-cli"]
+
+[tool.uv]
+package = false
+
+[tool.uv.sources]
+# Published CLI v0.1.44; tests never use the developer's global installation.
+deploy-your-startup-cli = { git = "https://github.com/Deploy-your-Startup/cli.git", rev = "61947cfa423e32d3b48d80ec7e3a31d8382b9f20" }

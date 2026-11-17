@@ -1,9 +1,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, mkdtempSync, mkdirSync, writeFileSync, cpSync, rmSync } from "node:fs";
-import { homedir, tmpdir } from "node:os";
+import { mkdtempSync, mkdirSync, writeFileSync, cpSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
+
+assert.ok(process.env.STARTUP_TEST_EXECUTABLE, "Run mise run test to use the locked test runtime");
 
 const source = new URL("../../", import.meta.url);
 test("GIVEN a differently named factory WHEN creating a hub task THEN the stable hub target resolves without personal projects", () => {
@@ -25,7 +27,7 @@ test("GIVEN an unreachable repository WHEN setup clones it THEN setup fails befo
     const bin = join(root, "bin"); mkdirSync(bin);
     const quote = (s) => "'" + s.replaceAll("'", "'\\''") + "'";
     for (const name of ["startup", "yq", "git", "dirname", "head"]) {
-      const command = name === "startup" ? (process.env.STARTUP_TEST_EXECUTABLE || (existsSync(join(homedir(), ".local/share/startup/commands/startup")) ? join(homedir(), ".local/share/startup/commands/startup") : name)) : name;
+      const command = name === "startup" ? process.env.STARTUP_TEST_EXECUTABLE : name;
       const found = spawnSync("which", [command], { encoding: "utf8" });
       assert.equal(found.status, 0, command);
       writeFileSync(join(bin, name), `#!/bin/bash\nexec ${quote(found.stdout.trim())} "$@"\n`, { mode: 0o755 });

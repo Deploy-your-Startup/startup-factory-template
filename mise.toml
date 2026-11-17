@@ -3,4 +3,4 @@ node = "24"
 
 [tasks.test]
 description = "Validate the template and test creation, adoption and updates with the real CLI"
-run = "node --test scripts/tests/*.test.mjs"
+run = "bash scripts/test.sh"
