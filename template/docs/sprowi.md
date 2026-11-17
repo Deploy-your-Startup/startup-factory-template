@@ -592,7 +592,7 @@ Four separate sets, and the separation is the point.
 | Where | Variables | Holds a secret? |
 |---|---|---|
 | `sandbox/agent.sbxenv.yaml`, `env:` | `SPROWI_ENGINE`, `SPROWI_CONFIG`, `SPROWI_INPUT_DIR`, `SPROWI_OUTPUT_DIR`, `SPROWI_WORKSPACE` | no — only paths |
-| `sandbox/kits/<engine>/spec.yaml` | one of `CLAUDE_CODE_OAUTH_TOKEN`, `OPENAI_API_KEY`, `OPENROUTER_API_KEY`, `COPILOT_GITHUB_TOKEN` | no — a **placeholder**; sbx swaps it into the outbound header on the host |
+| `sandbox/kits/sprowi-<engine>/spec.yaml` | one of `CLAUDE_CODE_OAUTH_TOKEN`, `OPENAI_API_KEY`, `OPENROUTER_API_KEY`, `COPILOT_GITHUB_TOKEN` | no — a **placeholder**; sbx swaps it into the outbound header on the host |
 | `engines/<engine>.mjs` | that credential, `PATH`, `HOME`, `CI`, the proxy variables, a redirected agent home (`CLAUDE_CONFIG_DIR`, `CODEX_HOME`, `COPILOT_HOME`, `OPENCODE_CONFIG`) and `XDG_*` under `/tmp` | no |
 | `run-commands.mjs` (setup and checks) | `PATH`, `HOME`, `CI`, `NODE_ENV` | **no credential at all** |
 

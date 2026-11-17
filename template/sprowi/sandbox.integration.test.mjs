@@ -17,6 +17,12 @@ test("GIVEN current sbx WHEN the verifier is created THEN v3 kits install runtim
   const definition = fileURLToPath(new URL("sandbox/verifier.sbxenv.yaml", import.meta.url));
   for (const folder of ["workspace", "input", "output"]) mkdirSync(join(directory, folder));
   const environment = [definition, ...Object.entries({ name, workspace: join(directory, "workspace"), input: join(directory, "input"), output: join(directory, "output"), config: join(directory, "input/config.json") }).flatMap(([key, value]) => ["--env-arg", `${key}=${value}`])];
+  const agentEnvironment = [
+    fileURLToPath(new URL("sandbox/agent.sbxenv.yaml", import.meta.url)),
+    fileURLToPath(new URL("sandbox/codex.sbxenv.yaml", import.meta.url)),
+    ...environment.slice(1), "--env-arg", "engine=codex", "--env-arg", "accountId=fixture-account",
+    "--env-arg", "secretCommand=printf sprowi-fixture",
+  ];
   function sbx(args) {
     const result = spawnSync("sbx", args, { encoding: "utf8", timeout: 240000 });
     assert.equal(result.status, 0, result.stdout + result.stderr);
@@ -39,8 +45,13 @@ curl -sS --max-time 15 https://github.com
     assert.match(output, /Docker version/);
     assert.match(output, /Blocked by local rule for api\.anthropic\.com/);
     assert.match(output, /Blocked by local rule for github\.com/);
+    sbx(["env", "rm", "--force", ...environment]);
+    // A built-in codex workload and our auth mixin must have distinct kit names.
+    // The synthetic host credential must become a sentinel, never the value.
+    sbx(["env", "create", "--force", ...agentEnvironment]);
+    sbx(["exec", name, "sh", "-c", 'test -n "$OPENAI_API_KEY" && test "$OPENAI_API_KEY" != sprowi-fixture']);
   } finally {
-    try { sbx(["env", "rm", "--force", ...environment]); }
+    try { sbx(["env", "rm", "--force", "--prune-bindings", ...agentEnvironment]); }
     finally { rmSync(directory, { recursive: true, force: true }); }
   }
 });

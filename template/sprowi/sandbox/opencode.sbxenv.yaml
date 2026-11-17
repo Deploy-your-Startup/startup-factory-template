@@ -7,7 +7,7 @@ args:
 kits:
   - ./kits/mise
   - ./kits/images
-  - source: ./kits/opencode
+  - source: ./kits/sprowi-opencode
     args:
       cli: ${{ env.args.cli }}
       modelHost: ${{ env.args.modelHost }}
