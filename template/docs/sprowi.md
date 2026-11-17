@@ -567,14 +567,23 @@ and `sprowi/projects/*.json` point at it, so an editor explains them inline. It
 describes both files: nothing is `required`, because a project file is an
 overlay that carries only what it changes.
 
-The sandbox definitions are validated by `sbx` itself. The two kits that take
-arguments need them supplied to validate standalone:
+Sprowi's mixins use Docker Sandbox kit v3, matching the built-in agents in
+current `sbx`. Keep every kit in a composition on v3. The environment files
+still use their independent schema version 1. The shared runtime mixin installs
+checksum-verified Node 24.11.1 and mise 2026.9.11, including in the shell verifier.
+Model credentials remain proxy-managed and runtime-only; the verifier has none.
+Network denies apply during install and runtime.
+
+Exercise the real verifier on an authenticated Docker Sandboxes host:
 
 ```bash
-sbx kit validate sprowi/sandbox/kits/claude/
-sbx kit validate sprowi/sandbox/kits/opencode/ \
-  --kit-arg cli=opencode-ai@1.18.29 --kit-arg modelHost=openrouter.ai
+SPROWI_TEST_SANDBOX=1 node --test sprowi/sandbox.integration.test.mjs
 ```
+
+This checks kit composition, Node/mise/Docker availability, the read-only input
+mount, absent model credentials and denied provider/GitHub requests. Ordinary
+offline tests skip this host-dependent scenario explicitly. Declaration-only
+mixins need no local image builder.
 
 ## Environment variables
 
@@ -583,7 +592,7 @@ Four separate sets, and the separation is the point.
 | Where | Variables | Holds a secret? |
 |---|---|---|
 | `sandbox/agent.sbxenv.yaml`, `env:` | `SPROWI_ENGINE`, `SPROWI_CONFIG`, `SPROWI_INPUT_DIR`, `SPROWI_OUTPUT_DIR`, `SPROWI_WORKSPACE` | no — only paths |
-| `sandbox/kits/<engine>/spec.yaml` | one of `CLAUDE_CODE_OAUTH_TOKEN`, `OPENAI_API_KEY`, `OPENROUTER_API_KEY`, `COPILOT_GITHUB_TOKEN` | no — a **placeholder**; sbx swaps it into the outbound header on the host |
+| `sandbox/kits/sprowi-<engine>/spec.yaml` | one of `CLAUDE_CODE_OAUTH_TOKEN`, `OPENAI_API_KEY`, `OPENROUTER_API_KEY`, `COPILOT_GITHUB_TOKEN` | no — a **placeholder**; sbx swaps it into the outbound header on the host |
 | `engines/<engine>.mjs` | that credential, `PATH`, `HOME`, `CI`, the proxy variables, a redirected agent home (`CLAUDE_CONFIG_DIR`, `CODEX_HOME`, `COPILOT_HOME`, `OPENCODE_CONFIG`) and `XDG_*` under `/tmp` | no |
 | `run-commands.mjs` (setup and checks) | `PATH`, `HOME`, `CI`, `NODE_ENV` | **no credential at all** |
 

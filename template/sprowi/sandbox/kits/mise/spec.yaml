@@ -1,12 +1,38 @@
-# mise is not in the sandbox images, but the projects pin their runtime in
-# mise.toml. Without it the checks would run against whatever node the image
-# happens to ship instead of the version the project declares.
-#
-# Installed from npm on purpose: the official installer downloads its binary
-# from github.com, which every Sprowi kit denies.
-schemaVersion: "2"
+# syntax=docker/sandbox-kit:3
+# Supply Node/npm and pinned mise to every agent and the credential-free verifier.
+schemaVersion: '3'
 kind: mixin
-name: sprowi-mise
-setup:
-  install:
-    - command: npm install --global mise@2026.9.11
+displayName: sprowi-mise
+capabilities:
+- type: com.docker.sandbox/network-policy@1
+  config:
+    install:
+      allow:
+      - registry.npmjs.org
+      - nodejs.org
+    runtime: {}
+- type: com.docker.sandbox/lifecycle@1
+  config:
+    install:
+    - command: |-
+        set -eu
+        # v3 shell no longer supplies Node. Install the pinned runtime on both roles.
+        case "$(uname -m)" in aarch64|arm64) arch=arm64 ;; x86_64) arch=x64 ;; *) echo "Unsupported Node architecture" >&2; exit 1 ;; esac
+        version=24.11.1
+        archive="node-v${version}-linux-${arch}.tar.gz"
+        directory=$(mktemp -d)
+        trap 'rm -rf "$directory"' EXIT
+        cd "$directory"
+        curl -fsSLO "https://nodejs.org/dist/v${version}/${archive}"
+        curl -fsSLO "https://nodejs.org/dist/v${version}/SHASUMS256.txt"
+        awk -v name="$archive" '$2 == name' SHASUMS256.txt > checksum
+        [ -s checksum ]
+        sha256sum -c checksum
+        tar -xzf "$archive" -C /usr/local --strip-components=1
+        npm install --global mise@2026.9.11
+      user: '0'
+      env:
+      - HTTP_PROXY
+      - HTTPS_PROXY
+      - NO_PROXY
+      - NODE_EXTRA_CA_CERTS

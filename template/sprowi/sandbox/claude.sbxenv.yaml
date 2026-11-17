@@ -2,7 +2,7 @@ schemaVersion: "1"
 kits:
   - ./kits/mise
   - ./kits/images
-  - source: ./kits/claude
+  - source: ./kits/sprowi-claude
 secrets:
   sprowi-claude:
     command: ${{ env.args.secretCommand }}

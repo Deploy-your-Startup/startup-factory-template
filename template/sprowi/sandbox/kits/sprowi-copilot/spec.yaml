@@ -1,0 +1,54 @@
+# syntax=docker/sandbox-kit:3
+# Copilot CLI uses its own proxy-managed credential so the business-account
+# endpoint is covered without redefining the built-in github service.
+schemaVersion: '3'
+kind: mixin
+displayName: sprowi-copilot
+args:
+  cli:
+    required: true
+    description: Pinned Copilot CLI package, engines.copilot.cli
+capabilities:
+- type: com.docker.sandbox/credential@1
+  config:
+    service: sprowi-copilot
+    apiKey:
+      name: COPILOT_GITHUB_TOKEN
+      proxyManaged: true
+      inject:
+      - domain: api.github.com
+        header: Authorization
+        format: Bearer %s
+      - domain: api.githubcopilot.com
+        header: Authorization
+        format: Bearer %s
+      - domain: api.business.githubcopilot.com
+        header: Authorization
+        format: Bearer %s
+    phase: runtime
+- type: com.docker.sandbox/network-policy@1
+  config:
+    install:
+      allow:
+      - registry.npmjs.org
+      deny:
+      - api.anthropic.com
+      - api.openai.com
+      - github.com
+      - raw.githubusercontent.com
+      - gist.githubusercontent.com
+      - objects.githubusercontent.com
+      - avatars.githubusercontent.com
+    runtime:
+      deny:
+      - api.anthropic.com
+      - api.openai.com
+      - github.com
+      - raw.githubusercontent.com
+      - gist.githubusercontent.com
+      - objects.githubusercontent.com
+      - avatars.githubusercontent.com
+      allow:
+      - api.github.com
+      - api.githubcopilot.com
+      - api.business.githubcopilot.com

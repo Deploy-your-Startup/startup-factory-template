@@ -8,7 +8,7 @@ env:
 kits:
   - ./kits/mise
   - ./kits/images
-  - source: ./kits/codex
+  - source: ./kits/sprowi-codex
 secrets:
   sprowi-codex:
     command: ${{ env.args.secretCommand }}

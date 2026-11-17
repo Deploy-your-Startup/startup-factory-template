@@ -5,7 +5,7 @@ args:
 kits:
   - ./kits/mise
   - ./kits/images
-  - source: ./kits/copilot
+  - source: ./kits/sprowi-copilot
     args:
       cli: ${{ env.args.cli }}
 secrets:
