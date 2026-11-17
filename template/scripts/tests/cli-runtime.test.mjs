@@ -22,6 +22,17 @@ distribution = importlib.metadata.distribution('deploy-your-startup-cli')
 source = json.loads(distribution.read_text('direct_url.json'))
 assert source['vcs_info']['commit_id'] == expected
 subprocess.run([sys.argv[2], '--help'], check=True, capture_output=True)
+# GIVEN legacy metadata containing a synthetic private key, WHEN inspected through
+# the locked CLI, THEN its public diagnostic never emits the credential.
+marker = 'synthetic-private-key-do-not-log'
+state = pathlib.Path('connection.yml').resolve()
+state.write_text(json.dumps({'host': '203.0.113.10', 'ssh_user': 'root', 'ssh_port': 22, 'user': {'client-key-data': marker}}))
+config = pathlib.Path('config.json').resolve()
+config.write_text(json.dumps({'contexts': [{'name': 'sample', 'context': {'user': 'sample'}}], 'users': [{'name': 'sample', 'user': {'exec': {'args': ['-I', '-m', 'cli.kube_access', str(state)]}}}]}))
+result = subprocess.run([sys.argv[2], 'cluster', 'inspect', '--context', 'sample', '--kubeconfig', str(config)], check=True, capture_output=True, text=True)
+assert marker not in result.stdout + result.stderr
+assert json.loads(result.stdout)['credential_storage'] == 'legacy-local'
+
 `, fileURLToPath(new URL("../../pyproject.toml", import.meta.url)), process.env.STARTUP_TEST_EXECUTABLE], {
       cwd: directory, encoding: "utf8", timeout: 30000,
       env: { ...process.env, PATH: directory },
