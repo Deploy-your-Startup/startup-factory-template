@@ -114,8 +114,9 @@ HEAD. Missing checkouts, repositories without Copier metadata and uncommitted
 changes are skipped. Review the diffs, resolve conflicts, run project checks and
 commit each update. The script does not pull, commit, push or deploy.
 
-Shared deployment roles and workflows are updated separately, one release at a
-time. Each startup stays on its release until you move it:
+Shared deployment updates include full-stack and Pages projects and require a
+CLI with `startup update --project-dir`. Older CLIs stop before changing files.
+Roles and workflows are updated separately, one release at a time. Each startup stays on its release until you move it:
 
 ```bash
 ./scripts/update-deployments.sh          # show each startup's release

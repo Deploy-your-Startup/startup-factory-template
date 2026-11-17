@@ -22,8 +22,8 @@ fi
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 root_dir="$(dirname "$script_dir")"
 command -v startup >/dev/null || { echo 'error: startup CLI is required.' >&2; exit 1; }
-startup update --help >/dev/null 2>&1 || {
-  echo 'error: this startup CLI has no "update" command; install the current release.' >&2
+startup update --help 2>/dev/null | grep -q -- '--project-dir' || {
+  echo 'error: this startup CLI cannot update workflow-only projects; install the current release.' >&2
   exit 1
 }
 registry="$("$script_dir/registry.sh" startups)"
@@ -39,12 +39,12 @@ while IFS=$'\t' read -r name _repo _deployed _context; do
     skipped=$((skipped + 1))
     continue
   fi
-  if [ ! -d "$project/deployment" ]; then
-    echo "$name — skipped: no deployment directory."
+  if [ ! -d "$project/deployment" ] && ! grep -rqE 'uses:.*[^/]+/[^/]+/\.github/(workflows|actions)/' "$project/.github/workflows" 2>/dev/null; then
+    echo "$name — skipped: no shared deployment workflows."
     skipped=$((skipped + 1))
     continue
   fi
-  args=(update --working-directory "$project/deployment")
+  args=(update --project-dir "$project")
   if [ "$mode" = preview ]; then
     args+=(--check)
   elif [ -n "$(git -C "$project" status --porcelain)" ]; then

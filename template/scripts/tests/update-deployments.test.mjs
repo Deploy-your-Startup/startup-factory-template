@@ -105,7 +105,7 @@ test("GIVEN registered startups WHEN previewing and applying shared deployment u
     const preview = run(root, "bash", [join(root, "scripts/update-deployments.sh")], tmpdir());
 
     assert.match(preview, /Update available: release v1\.0\.0 of Deploy-your-Startup\/deploy\./);
-    assert.match(preview, /landing — skipped: no deployment directory/);
+    assert.match(preview, /landing — skipped: no shared deployment workflows/);
     assert.match(preview, /absent — skipped: checkout missing/);
     assert.match(preview, /Summary \(preview\): 2 completed, 2 skipped, 0 failed/);
     assert.equal(git(root, healthy, "status", "--porcelain"), "");
@@ -139,6 +139,40 @@ test("GIVEN a startup CLI without the update command WHEN running the script THE
 
     assert.equal(result.status, 1, result.stdout + result.stderr);
     assert.match(result.stderr, /install the current release/);
+    assert.equal(git(root, healthy, "status", "--porcelain"), "");
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+
+test("GIVEN a Pages startup without Ansible WHEN previewing and applying THEN its shared workflow pin advances without creating deployment files", () => {
+  const root = workspace();
+  try {
+    const remote = remotes(root);
+    const landing = project(root, "landing", false);
+    mkdirSync(join(landing, ".github/workflows"), { recursive: true });
+    writeFileSync(join(landing, ".github/workflows/deploy.yml"), `jobs:\n  deploy:\n    uses: ${shared}@main\n`);
+    git(root, landing, "add", "-A");
+    git(root, landing, "commit", "-qm", "Pages workflow");
+    registry(root, ["landing"]);
+    const preview = run(root, "bash", [join(root, "scripts/update-deployments.sh")]);
+    assert.match(preview, /Summary \(preview\): 1 completed, 0 skipped, 0 failed/);
+    assert.equal(git(root, landing, "status", "--porcelain"), "");
+    run(root, "bash", [join(root, "scripts/update-deployments.sh"), "--apply"]);
+    const commit = git(root, remote, "rev-parse", "v1.0.0^{commit}");
+    assert.match(readFileSync(join(landing, ".github/workflows/deploy.yml"), "utf8"), new RegExp(`@${commit}`));
+    assert.equal(existsSync(join(landing, "deployment")), false);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test("GIVEN a legacy CLI that still has update WHEN applying THEN the capability check stops it before changing any project", () => {
+  const root = workspace('#!/bin/bash\nif [ "$1 $2" = "update --help" ]; then echo "Legacy update help"; exit 0; fi\necho called > "$TEST_REMOTES/legacy-called"\n');
+  try {
+    const healthy = project(root, "healthy");
+    registry(root, ["healthy"]);
+    const result = invoke(root, "bash", [join(root, "scripts/update-deployments.sh"), "--apply"]);
+    assert.equal(result.status, 1, result.stdout + result.stderr);
+    assert.match(result.stderr, /install the current release/);
+    assert.equal(existsSync(join(root, "remotes/legacy-called")), false);
     assert.equal(git(root, healthy, "status", "--porcelain"), "");
   } finally { rmSync(root, { recursive: true, force: true }); }
 });

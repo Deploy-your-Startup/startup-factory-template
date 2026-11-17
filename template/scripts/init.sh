@@ -74,7 +74,7 @@ if [ "$missing" -gt 0 ]; then
   echo -e "${RED}$missing required tool(s) missing. Please install them before continuing.${NC}"
   echo ""
   echo "Install hints:"
-  echo "  startup:  uv tool install --python 3.14 'git+https://github.com/Deploy-your-Startup/cli.git@v0.1.44'"
+  echo "  startup:  uv tool install --python 3.14 'git+https://github.com/Deploy-your-Startup/cli.git@v0.1.50'"
   echo "  uv:       curl -LsSf https://astral.sh/uv/install.sh | sh"
   echo "  gh:       brew install gh"
   echo "  yq:       brew install yq"
