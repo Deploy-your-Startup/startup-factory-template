@@ -79,7 +79,7 @@ deployment and template updates; never run Ansible directly or edit `deployment/
   migrates supported older callers, removes their separate role pin/checksum
   files and deploys nothing: review, commit and push to roll out, one startup first.
   Pages projects use the same single workflow entry without Ansible files.
-  The scripts require a CLI with `update --project-dir` and stop before changes
+  The scripts require CLI v0.1.52 or newer with single-version deployment support and stop before changes
   when an older installation is selected.
   `scripts/update-deployments.sh` shows every registered startup's release and
   `--apply` moves the clean checkouts locally. A startup that still calls a

@@ -9,7 +9,7 @@ public tooling repositories. It contains no operator portfolio or account setup.
 
 ## Create a factory
 
-Requires macOS, Git and Startup CLI v0.1.15 or newer. The public onboarding
+Requires macOS, Git and Startup CLI v0.1.52 or newer. The public onboarding
 installs the CLI, connects GitHub and creates your own Factory before the first
 startup. Install only the CLI without starting a project, then create a Factory:
 
