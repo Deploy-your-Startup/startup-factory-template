@@ -8,5 +8,5 @@ dependencies = ["deploy-your-startup-cli"]
 package = false
 
 [tool.uv.sources]
-# Reviewed workflow-update CLI candidate; tests never use the developer's global installation.
-deploy-your-startup-cli = { git = "https://github.com/Deploy-your-Startup/cli.git", rev = "c74405c84cef8d47ae29f122f7054507575a59a8" }
+# Published CLI v0.1.50; tests never use the developer's global installation.
+deploy-your-startup-cli = { git = "https://github.com/Deploy-your-Startup/cli.git", rev = "20c3efa9031d1510812093273b74cd7e756704e0" }
