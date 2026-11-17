@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, mkdtempSync, mkdirSync, writeFileSync, copyFileSync, cpSync, readFileSync, rmSync } from "node:fs";
-import { homedir, tmpdir } from "node:os";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 
@@ -20,10 +20,11 @@ test(`GIVEN Codex and ${scenario} WHEN init runs THEN Factory skills install loc
       copyFileSync(new URL(`scripts/${name}`, root), join(scripts, name));
     }
     writeFileSync(join(directory, "projects.yaml"), "projects: []\ntooling: []\n");
+    assert.ok(process.env.STARTUP_TEST_EXECUTABLE, "Run mise run test to use the locked test runtime");
     const quote = (value) => "'" + value.replaceAll("'", "'\\''") + "'";
-    // Use the actual installed CLI and YAML parser; isolate all account access.
-    for (const name of ["startup", "yq", "dirname", "head", "gh"]) {
-      const found = spawnSync("which", [name === "startup" ? (process.env.STARTUP_TEST_EXECUTABLE || (existsSync(join(homedir(), ".local/share/startup/commands/startup")) ? join(homedir(), ".local/share/startup/commands/startup") : name)) : name], { encoding: "utf8" });
+    // Use the repository-pinned CLI and real YAML parser; isolate account access.
+    for (const name of ["startup", "yq", "dirname", "head"]) {
+      const found = spawnSync("which", [name === "startup" ? process.env.STARTUP_TEST_EXECUTABLE : name], { encoding: "utf8" });
       assert.equal(found.status, 0, `${name} is required for this integration test`);
       writeFileSync(join(binaries, name), `#!/bin/bash\nexec ${quote(found.stdout.trim())} "$@"\n`, { mode: 0o755 });
     }
@@ -34,6 +35,17 @@ test(`GIVEN Codex and ${scenario} WHEN init runs THEN Factory skills install loc
     // A new optional skill must not become part of the automatic installation.
     mkdirSync(join(directory, "skills/optional-example"));
     writeFileSync(join(directory, "skills/optional-example/SKILL.md"), "---\nname: optional-example\ndescription: Optional example\n---\n# Optional\n");
+    const ghCode = `import pathlib, shutil, sys
+args = sys.argv[1:]
+if args == ['--version']: print('gh test boundary')
+elif args == ['skill', 'install', '--help']: pass
+elif args[:2] == ['skills', 'install']:
+    target = pathlib.Path.cwd() / '.agents/skills' / args[3]
+    target.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(pathlib.Path(args[2]) / 'skills' / args[3] / 'SKILL.md', target / 'SKILL.md')
+else: sys.exit(91)
+`;
+    writeFileSync(join(binaries, "gh"), `#!/bin/bash\nexec ${quote(process.env.FACTORY_TEST_PYTHON)} -c ${quote(ghCode)} "$@"\n`, { mode: 0o755 });
     if (scenario !== "success") {
       writeFileSync(join(binaries, "gh"), `#!/bin/bash\n[ "$1" = --version ] && { echo test-gh; exit 0; }\n${scenario === "old-gh" ? "exit 1" : '[ "$1 $2 $3" = "skill install --help" ] && exit 0; echo installation-denied >&2; exit 1'}\n`, { mode: 0o755 });
     }
@@ -116,7 +128,7 @@ test("GIVEN the required tools but no kubectl WHEN init runs THEN setup complete
     const quote = (value) => "'" + value.replaceAll("'", "'\\''") + "'";
     // No shell profile, so init cannot pick up a kubectl from Homebrew paths.
     for (const name of ["startup", "yq", "dirname", "head"]) {
-      const found = spawnSync("which", [name === "startup" ? (process.env.STARTUP_TEST_EXECUTABLE || (existsSync(join(homedir(), ".local/share/startup/commands/startup")) ? join(homedir(), ".local/share/startup/commands/startup") : name)) : name], { encoding: "utf8" });
+      const found = spawnSync("which", [name === "startup" ? process.env.STARTUP_TEST_EXECUTABLE : name], { encoding: "utf8" });
       assert.equal(found.status, 0, `${name} is required for this integration test`);
       writeFileSync(join(binaries, name), `#!/bin/bash\nexec ${quote(found.stdout.trim())} "$@"\n`, { mode: 0o755 });
     }

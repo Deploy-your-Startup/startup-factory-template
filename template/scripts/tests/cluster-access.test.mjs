@@ -1,9 +1,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, mkdtempSync, mkdirSync, writeFileSync, copyFileSync, readFileSync, rmSync } from "node:fs";
-import { homedir, tmpdir } from "node:os";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawn, spawnSync } from "node:child_process";
+
+assert.ok(process.env.STARTUP_TEST_EXECUTABLE, "Run mise run test to use the locked test runtime");
 
 const root = new URL("../../", import.meta.url);
 const quote = (value) => "'" + value.replaceAll("'", "'\\''") + "'";
@@ -24,7 +26,7 @@ function runWithoutTerminal(script, args, options) {
 
 function realBinary(name) {
   const target = name === "startup"
-    ? (process.env.STARTUP_TEST_EXECUTABLE || (existsSync(join(homedir(), ".local/share/startup/commands/startup")) ? join(homedir(), ".local/share/startup/commands/startup") : name))
+    ? process.env.STARTUP_TEST_EXECUTABLE
     : name;
   const found = spawnSync("which", [target], { encoding: "utf8" });
   assert.equal(found.status, 0, `${name} is required for this integration test`);

@@ -6,7 +6,8 @@ import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 
 const scripts = new URL("../", import.meta.url);
-const python = process.env.FACTORY_TEST_PYTHON || "python3";
+const python = process.env.FACTORY_TEST_PYTHON;
+assert.ok(python, "Run mise run test to use the locked test runtime");
 const quote = (value) => "'" + value.replaceAll("'", "'\\''") + "'";
 const shared = "Deploy-your-Startup/deploy/.github/workflows/deploy.yml";
 // GitHub is the only stand-in: `gh` clones local bare repositories instead.
@@ -25,7 +26,7 @@ function workspace(startup) {
   for (const name of ["update-deployments.sh", "registry.sh"]) {
     copyFileSync(new URL(name, scripts), join(root, "scripts", name));
   }
-  // Exercise the real installed CLI even when the user's launcher depends on HOME.
+  // Exercise the repository-pinned CLI even when the user's launcher depends on HOME.
   writeFileSync(join(root, "bin/startup"), startup ?? `#!/bin/bash\nexec ${quote(python)} -m cli.startup "$@"\n`, { mode: 0o755 });
   writeFileSync(join(root, "bin/gh"), fakeGh, { mode: 0o755 });
   return root;

@@ -10,10 +10,10 @@ Read [VISION.md](template/VISION.md) and the generated
 Follow [Testing policy and completion evidence](template/docs/testing-policy.md);
 user flows are tested end to end with the real CLI and real Git repositories.
 
-Run `mise run test`. Install the published Startup CLI v0.1.44 with its Copier
-dependency first. Set `FACTORY_TEST_PYTHON` to that installation's Python when it
-is not the default `python3`. Set `STARTUP_TEST_EXECUTABLE` to its actual console
-entrypoint when a launcher depends on HOME. CI installs the pinned CLI directly.
+Run `mise run test`. The harness reuses `template/pyproject.toml` and
+`template/uv.lock` as the sole test dependency definition. uv installs the CLI and its locked
+dependencies into a local virtual environment. The test runner selects that
+Python and CLI for every child suite; no global CLI installation is needed.
 The suite validates privacy, renders a workspace, adopts an existing workspace,
 previews and applies updates, preserves owner configuration and customizations,
 and runs the generated workspace's integration tests.
