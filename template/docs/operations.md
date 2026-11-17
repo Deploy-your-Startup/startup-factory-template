@@ -75,10 +75,11 @@ deployment and template updates; never run Ansible directly or edit `deployment/
   public `Deploy-your-Startup/deploy` and changes only when told to.
   `startup update --check` in a startup shows its release and a newer one,
   `startup update` adopts it, `startup update --version <release>` selects one
-  or goes back. It edits the role pin and workflow references and deploys
-  nothing: review, commit and push to roll out, one startup first.
-  Pages projects use the same commands; their workflow references are the pin.
-  The scripts require a CLI with `update --project-dir` and stop before changes
+  or goes back. It edits the sole reference in `.github/workflows/startup.yml`,
+  migrates supported older callers, removes their separate role pin/checksum
+  files and deploys nothing: review, commit and push to roll out, one startup first.
+  Pages projects use the same single workflow entry without Ansible files.
+  The scripts require CLI v0.1.52 or newer with single-version deployment support and stop before changes
   when an older installation is selected.
   `scripts/update-deployments.sh` shows every registered startup's release and
   `--apply` moves the clean checkouts locally. A startup that still calls a

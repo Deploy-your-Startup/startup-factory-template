@@ -22,10 +22,11 @@ fi
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 root_dir="$(dirname "$script_dir")"
 command -v startup >/dev/null || { echo 'error: startup CLI is required.' >&2; exit 1; }
-startup update --help 2>/dev/null | grep -q -- '--project-dir' || {
-  echo 'error: this startup CLI cannot update workflow-only projects; install the current release.' >&2
+update_help="$(startup update --help 2>/dev/null)" || update_help=''
+if ! grep -q -- '--project-dir' <<<"$update_help" || ! grep -qF -- '.github/workflows/startup.yml' <<<"$update_help"; then
+  echo 'error: this startup CLI cannot update single-version deployment projects; install the current release.' >&2
   exit 1
-}
+fi
 registry="$("$script_dir/registry.sh" startups)"
 completed=0
 skipped=0

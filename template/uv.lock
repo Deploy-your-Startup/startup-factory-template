@@ -265,8 +265,8 @@ wheels = [
 
 [[package]]
 name = "deploy-your-startup-cli"
-version = "0.1.50"
-source = { git = "https://github.com/Deploy-your-Startup/cli.git?rev=20c3efa9031d1510812093273b74cd7e756704e0#20c3efa9031d1510812093273b74cd7e756704e0" }
+version = "0.1.52"
+source = { git = "https://github.com/Deploy-your-Startup/cli.git?rev=4dd6dcd18c2dfc4d9a81586272d0e3f5007fa839#4dd6dcd18c2dfc4d9a81586272d0e3f5007fa839" }
 dependencies = [
     { name = "ansible" },
     { name = "click" },
@@ -301,7 +301,7 @@ dependencies = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "deploy-your-startup-cli", git = "https://github.com/Deploy-your-Startup/cli.git?rev=20c3efa9031d1510812093273b74cd7e756704e0" }]
+requires-dist = [{ name = "deploy-your-startup-cli", git = "https://github.com/Deploy-your-Startup/cli.git?rev=4dd6dcd18c2dfc4d9a81586272d0e3f5007fa839" }]
 
 [[package]]
 name = "filelock"

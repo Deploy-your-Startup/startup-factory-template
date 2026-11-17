@@ -67,10 +67,13 @@ function repository(root, directory, files) {
 }
 
 // Deploy-your-Startup/deploy with one published, self-contained release.
-function remotes(root) {
+function remotes(root, singleVersion = false) {
   const source = repository(root, join(root, "sources/deploy"), {
     ".github/workflows/deploy.yml": "jobs:\n  deploy:\n    steps:\n      - uses: Deploy-your-Startup/deploy/.github/actions/deploy@v1.0.0\n",
     "roles/sample/tasks/main.yml": "- ansible.builtin.debug:\n    msg: reviewed\n",
+    ...(singleVersion ? {
+      ".github/workflows/project.yml": "on:\n  workflow_call:\n    inputs:\n      operation: {type: string, required: true}\njobs: {}\n",
+    } : {}),
   });
   git(root, source, "tag", "-a", "-m", "Release v1.0.0", "v1.0.0");
   mkdirSync(join(root, "remotes"));
@@ -125,7 +128,7 @@ test("GIVEN registered startups WHEN previewing and applying shared deployment u
     assert.equal(existsSync(join(dirty, "deployment/shared-roles.ref")), false);
 
     const again = run(root, "bash", [join(root, "scripts/update-deployments.sh")]);
-    assert.match(again, /Up to date: this project runs release/);
+    assert.match(again, /Up to date: configured deployment release/);
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
@@ -164,8 +167,8 @@ test("GIVEN a Pages startup without Ansible WHEN previewing and applying THEN it
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
-test("GIVEN a legacy CLI that still has update WHEN applying THEN the capability check stops it before changing any project", () => {
-  const root = workspace('#!/bin/bash\nif [ "$1 $2" = "update --help" ]; then echo "Legacy update help"; exit 0; fi\necho called > "$TEST_REMOTES/legacy-called"\n');
+test("GIVEN a workflow-only CLI without single-version support WHEN applying THEN the capability check stops it before changing any project", () => {
+  const root = workspace('#!/bin/bash\nif [ "$1 $2" = "update --help" ]; then echo "Usage: startup update --project-dir PATH"; exit 0; fi\necho called > "$TEST_REMOTES/legacy-called"\n');
   try {
     const healthy = project(root, "healthy");
     registry(root, ["healthy"]);
@@ -174,5 +177,26 @@ test("GIVEN a legacy CLI that still has update WHEN applying THEN the capability
     assert.match(result.stderr, /install the current release/);
     assert.equal(existsSync(join(root, "remotes/legacy-called")), false);
     assert.equal(git(root, healthy, "status", "--porcelain"), "");
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+
+test("GIVEN a release with one project entry WHEN applying Factory updates THEN only that entry records the deployment version", () => {
+  const root = workspace();
+  try {
+    const remote = remotes(root, true);
+    const app = project(root, "example");
+    registry(root, ["example"]);
+    const result = run(root, "bash", [join(root, "scripts/update-deployments.sh"), "--apply"]);
+    assert.match(result, /Nothing is deployed/);
+    const revision = git(root, remote, "rev-parse", "v1.0.0^{commit}");
+    const entry = readFileSync(join(app, ".github/workflows/startup.yml"), "utf8");
+    assert.ok(entry.includes(`/project.yml@${revision}`));
+    assert.equal((entry.match(/uses: Deploy-your-Startup\/deploy\//g) ?? []).length, 1);
+    assert.ok(readFileSync(join(app, ".github/workflows/deploy.yml"), "utf8").includes("uses: ./.github/workflows/startup.yml"));
+    assert.equal(existsSync(join(app, "deployment/shared-roles.ref")), false);
+    assert.equal(existsSync(join(app, "deployment/shared-roles.sha256")), false);
+    const checked = run(root, "bash", [join(root, "scripts/update-deployments.sh")]);
+    assert.match(checked, /Up to date: configured deployment release/);
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
