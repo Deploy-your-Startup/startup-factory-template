@@ -125,7 +125,7 @@ test("GIVEN registered startups WHEN previewing and applying shared deployment u
     assert.equal(existsSync(join(dirty, "deployment/shared-roles.ref")), false);
 
     const again = run(root, "bash", [join(root, "scripts/update-deployments.sh")]);
-    assert.match(again, /Up to date: this project runs release/);
+    assert.match(again, /Up to date: configured deployment release/);
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
