@@ -1,3 +1,4 @@
+# syntax=docker/sandbox-kit:3
 # Claude Code authenticates with the token from `claude setup-token`, so the run
 # bills the subscription instead of an API key.
 #
@@ -6,27 +7,40 @@
 # path ("Not logged in", no request). ANTHROPIC_AUTH_TOKEN is the gateway path
 # and ranks above it — the CLI puts the value straight into the Authorization
 # header, which is exactly where the host proxy swaps in the real token.
-schemaVersion: "2"
+schemaVersion: '3'
 kind: mixin
-name: sprowi-claude
-credentials:
-  - service: sprowi-claude
-    required: true
+displayName: sprowi-claude
+capabilities:
+- type: com.docker.sandbox/credential@1
+  config:
+    service: sprowi-claude
     apiKey:
       name: ANTHROPIC_AUTH_TOKEN
       proxyManaged: true
       inject:
-        - domain: api.anthropic.com
-          header: Authorization
-          format: "Bearer %s"
-permissions:
-  network:
-    deny:
+      - domain: api.anthropic.com
+        header: Authorization
+        format: Bearer %s
+    phase: runtime
+- type: com.docker.sandbox/network-policy@1
+  config:
+    install:
+      allow:
+      - registry.npmjs.org
+      deny:
       - github.com
       - api.github.com
-      # Content hosts only: pkg-containers.githubusercontent.com stays reachable
-      # because ghcr.io serves public image layers from it.
       - raw.githubusercontent.com
       - gist.githubusercontent.com
       - objects.githubusercontent.com
       - avatars.githubusercontent.com
+    runtime:
+      deny:
+      - github.com
+      - api.github.com
+      - raw.githubusercontent.com
+      - gist.githubusercontent.com
+      - objects.githubusercontent.com
+      - avatars.githubusercontent.com
+      allow:
+      - api.anthropic.com

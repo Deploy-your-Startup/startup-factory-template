@@ -1,8 +1,9 @@
+# syntax=docker/sandbox-kit:3
 # OpenCode talks to the configured gateway directly; the host proxy injects the
 # key for that one host. With the committed default that host is OpenRouter.
-schemaVersion: "2"
+schemaVersion: '3'
 kind: mixin
-name: sprowi-opencode
+displayName: sprowi-opencode
 args:
   cli:
     required: true
@@ -10,29 +11,51 @@ args:
   modelHost:
     required: true
     description: Host of engines.opencode.upstreamUrl
-credentials:
-  - service: sprowi-openrouter
-    required: true
+capabilities:
+- type: com.docker.sandbox/credential@1
+  config:
+    service: sprowi-openrouter
     apiKey:
       name: OPENROUTER_API_KEY
       proxyManaged: true
       inject:
-        - domain: ${{ kit.args.modelHost }}
-          header: Authorization
-          format: "Bearer %s"
-permissions:
-  network:
-    deny:
+      - domain: ${{ kit.args.modelHost }}
+        header: Authorization
+        format: Bearer %s
+    phase: runtime
+- type: com.docker.sandbox/network-policy@1
+  config:
+    install:
+      allow:
+      - registry.npmjs.org
+      deny:
       - api.anthropic.com
       - api.openai.com
       - github.com
       - api.github.com
-      # Content hosts only: pkg-containers.githubusercontent.com stays reachable
-      # because ghcr.io serves public image layers from it.
       - raw.githubusercontent.com
       - gist.githubusercontent.com
       - objects.githubusercontent.com
       - avatars.githubusercontent.com
-setup:
-  install:
+    runtime:
+      deny:
+      - api.anthropic.com
+      - api.openai.com
+      - github.com
+      - api.github.com
+      - raw.githubusercontent.com
+      - gist.githubusercontent.com
+      - objects.githubusercontent.com
+      - avatars.githubusercontent.com
+      allow:
+      - ${{ kit.args.modelHost }}
+- type: com.docker.sandbox/lifecycle@1
+  config:
+    install:
     - command: npm install --global ${{ kit.args.cli }}
+      user: '0'
+      env:
+      - HTTP_PROXY
+      - HTTPS_PROXY
+      - NO_PROXY
+      - NODE_EXTRA_CA_CERTS

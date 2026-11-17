@@ -1,11 +1,25 @@
+# syntax=docker/sandbox-kit:3
 # The verifier needs no model and no GitHub access. It still reaches package
 # registries, because setupCommands install the project's dependencies here.
-schemaVersion: "2"
+schemaVersion: '3'
 kind: mixin
-name: sprowi-verifier
-permissions:
-  network:
-    deny:
+displayName: sprowi-verifier
+capabilities:
+- type: com.docker.sandbox/network-policy@1
+  config:
+    install:
+      allow:
+      - registry.npmjs.org
+      deny:
+      - api.anthropic.com
+      - api.openai.com
+      - openrouter.ai
+      - api.githubcopilot.com
+      - api.business.githubcopilot.com
+      - github.com
+      - api.github.com
+    runtime:
+      deny:
       - api.anthropic.com
       - api.openai.com
       - openrouter.ai
