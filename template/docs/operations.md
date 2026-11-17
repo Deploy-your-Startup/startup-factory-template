@@ -94,9 +94,16 @@ deployment and template updates; never run Ansible directly or edit `deployment/
 - Ask before destructive operations: deleting resources, rotating secrets,
   force-pushing, restores, VM or cluster changes. Sprowi runs and publishing
   also need the owner's authorization.
-- Before any VM, OS or cluster upgrade, verify fresh database, media and cluster
-  backups plus a provider recovery snapshot. Never reopen Kubernetes API access
-  to work around a client problem.
+- Before package updates (`update-vms`), OS upgrades or cluster upgrades, run
+  `startup ansible backup --working-directory <project>/deployment --environment production`
+  for every startup on the cluster, attached ones included. Verify the downloaded
+  database, Django and media backups. Use this CLI command for application backups.
+- Package updates need no provider snapshot. Before OS or cluster upgrades,
+  additionally verify a cluster-state backup and a provider recovery snapshot.
+  The k3s upgrade role creates an etcd snapshot before upgrading; application
+  backups, cluster-state backups and provider snapshots cover different recovery
+  needs.
+- Never reopen Kubernetes API access to work around a client problem.
 - Secrets go through stdin and the Keychain; never put them in process
   arguments, logs or tracked files.
 - Never infer an operator's private address or call a startup ready for public
