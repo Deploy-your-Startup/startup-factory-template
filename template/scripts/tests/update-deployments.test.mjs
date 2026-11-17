@@ -167,8 +167,8 @@ test("GIVEN a Pages startup without Ansible WHEN previewing and applying THEN it
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
-test("GIVEN a legacy CLI that still has update WHEN applying THEN the capability check stops it before changing any project", () => {
-  const root = workspace('#!/bin/bash\nif [ "$1 $2" = "update --help" ]; then echo "Legacy update help"; exit 0; fi\necho called > "$TEST_REMOTES/legacy-called"\n');
+test("GIVEN a workflow-only CLI without single-version support WHEN applying THEN the capability check stops it before changing any project", () => {
+  const root = workspace('#!/bin/bash\nif [ "$1 $2" = "update --help" ]; then echo "Usage: startup update --project-dir PATH"; exit 0; fi\necho called > "$TEST_REMOTES/legacy-called"\n');
   try {
     const healthy = project(root, "healthy");
     registry(root, ["healthy"]);

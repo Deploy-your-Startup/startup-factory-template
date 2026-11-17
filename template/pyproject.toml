@@ -9,4 +9,4 @@ package = false
 
 [tool.uv.sources]
 # Published CLI v0.1.50; tests never use the developer's global installation.
-deploy-your-startup-cli = { git = "https://github.com/Deploy-your-Startup/cli.git", rev = "20c3efa9031d1510812093273b74cd7e756704e0" }
+deploy-your-startup-cli = { git = "https://github.com/Deploy-your-Startup/cli.git", rev = "4dd6dcd18c2dfc4d9a81586272d0e3f5007fa839" }
