@@ -7,10 +7,10 @@ Keep personal portfolio data out of shared templates.
 
 ## Start with the task
 
-- Reusable Factory rules, docs and scripts: edit the source template recorded
-  in `.copier-answers.yml`, following [CONTRIBUTING.md](CONTRIBUTING.md).
-  Publish a release there, then apply it here with `startup template update`.
-  Keep owner-specific changes in this instance.
+- Reusable Factory rules, docs and scripts: propose a PR in the shared template
+  recorded in `.copier-answers.yml`. See [CONTRIBUTING.md](CONTRIBUTING.md).
+  After merge and release, other Factory owners can adopt the improvement with
+  `startup template update`. Keep owner-specific changes in this instance.
 - Questions, reviews and planning: inspect local files; no automatic sync.
 - Code changes: inspect status and the target repository's `AGENTS.md`, then
   sync only affected repositories with `scripts/sync.sh --project <name>`
