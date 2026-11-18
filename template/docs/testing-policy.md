@@ -60,3 +60,12 @@ make.sh and mise commands; shared workflows consume the same service contracts.
 
 For concrete workflow triggers, skips and direct deployment exceptions, read the
 [E2E execution guide](https://github.com/Deploy-your-Startup/deploy/blob/main/docs/e2e-execution.md).
+
+## Production web security checks
+
+Check the final HTTPS response on each public origin for HSTS and a content
+security policy compatible with its pages. Check the Secure flag on both CSRF
+and session cookies using a test account. Verify the effective ingress limits
+on credential-handling routes. Exercise local and external return destinations
+for regular and asynchronous login and activation responses. Record which
+checks used the rendered configuration and which used the deployed service.
