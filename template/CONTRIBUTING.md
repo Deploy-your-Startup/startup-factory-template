@@ -5,9 +5,9 @@ Everyone can contribute useful defaults, fixes, tests and documentation. The
 `./scripts/init.sh` makes their code available locally. Read the relevant
 repository's AGENTS.md and contributor documentation first.
 
-Choose the repository that owns the change. Create a fork in your own account
-and a branch, keep the original repository as upstream, run its checks and open
-a pull request. A clone does not grant permission to push to the shared source.
+Choose the repository that owns the change. Create a branch from its current
+main and run its checks. With write access, push the branch to that repository
+and open a pull request.
 Never push personal application code or portfolio data into a tooling repository.
 
 For Factory improvements, use the template source recorded as `_src_path` in
