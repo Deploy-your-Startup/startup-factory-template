@@ -10,4 +10,4 @@ package = false
 [tool.uv.sources]
 # OIDC CLI candidate. Replace with the immutable release commit before merging.
 # Pinned CLI; tests never use the developer's global installation.
-deploy-your-startup-cli = { git = "https://github.com/Deploy-your-Startup/cli.git", rev = "0d8269e28c31fe90ab11173bf3bb5a976ca4c792" }
+deploy-your-startup-cli = { git = "https://github.com/Deploy-your-Startup/cli.git", rev = "faf1f05a957c7c39402efa1daa99083c34cd306f" }
