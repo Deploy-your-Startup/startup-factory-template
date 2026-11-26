@@ -67,7 +67,7 @@ sandbox="factory-code-$(openssl rand -hex 8)"
 printf 'Creating %s for %s at %s\n' "$sandbox" "$target" "$baseline" >&2
 # Use the official kit directly, independent of locally configured shortcuts.
 # No workspace path means the checkout lives on the VM's own filesystem.
-sbx create --name "$sandbox" --skills=off --static-mcp none \
+bash "$root/scripts/with-factory-kit.sh" create --name "$sandbox" --skills=off --static-mcp none \
   --env GH_TOKEN= --env GITHUB_TOKEN= \
   --deny-network github.com --deny-network '*.github.com' \
   --deny-network '*.hetzner.cloud' --deny-network api.cloudflare.com \

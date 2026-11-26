@@ -141,7 +141,12 @@ Then pick one workspace from the Factory root.
 ```
 
 Each session starts from the selected repository's committed snapshot. The
-sandbox has no host checkout mounted. Local edits, untracked files, other
+sandbox image includes the Factory's locked Startup CLI and a kubectl client.
+Docker builds the tools kit on first use and reuses the build cache. To build
+the kit separately, run `bash scripts/with-factory-kit.sh build`.
+Cluster access requires a separate connection and credentials.
+
+The sandbox has no host checkout mounted. Local edits, untracked files, other
 checkouts and Git credentials stay on the host. Review the files committed in
 the snapshot before sharing them with Codex, including any encrypted Vault
 files. The starter disables shared skills and external MCP servers, skips SSH

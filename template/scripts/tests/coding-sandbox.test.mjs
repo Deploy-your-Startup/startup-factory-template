@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { copyFileSync, mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { copyFileSync, cpSync, mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { test } from "node:test";
@@ -24,7 +24,7 @@ function fixture(t) {
   t.after(() => rmSync(root, { recursive: true, force: true }));
   const scripts = join(root, "scripts");
   mkdirSync(scripts);
-  for (const file of ["coding-sandbox.sh", "registry.sh"]) {
+  for (const file of ["coding-sandbox.sh", "registry.sh", "with-factory-kit.sh"]) {
     copyFileSync(new URL("../" + file, import.meta.url), join(scripts, file));
   }
   writeFileSync(join(root, "projects.yaml"), "projects:\n  - name: sample\n    repo: https://example.invalid/sample.git\ntooling: []\n");
@@ -51,6 +51,10 @@ test("GIVEN committed code and local dummy secrets WHEN opening a real sandbox T
   skip: process.env.FACTORY_TEST_CODING_SANDBOX !== "1" && "Requires a signed-in local Docker Sandboxes host",
 }, (t) => {
   const root = fixture(t);
+  for (const file of ["pyproject.toml", "uv.lock"]) {
+    copyFileSync(new URL("../../" + file, import.meta.url), join(root, file));
+  }
+  cpSync(new URL("../../sandbox", import.meta.url), join(root, "sandbox"), { recursive: true });
   const checkout = join(root, "projects/startups/sample");
   const siblingSecret = join(root, "projects/startups/other/.env");
   mkdirSync(checkout, { recursive: true });
@@ -100,14 +104,17 @@ test("GIVEN committed code and local dummy secrets WHEN opening a real sandbox T
     assert.match(check.stdout, /^\s*Denied:/m, check.stderr + check.stdout);
   }
   const guest = "/home/agent/workspace/factory-checkout";
+  assert.match(run(root, "sbx", ["exec", sandbox, "startup", "--version"]), /^startup \d/m);
+  assert.match(run(root, "sbx", ["exec", sandbox, "kubectl", "version", "--client"]), /Client Version: v1\.36\.5/);
   run(root, "sbx", ["exec", "--workdir", guest, sandbox, "bash", "-euc", [
     'fail() { echo "$1" >&2; exit 1; }',
     "test ! -e .env || fail 'Local .env is visible'",
     'test ! -e "$1" || fail "Other project is visible"',
     "test -L outside-link && test ! -e outside-link || fail 'Unexpected archived symlink'",
-    'for name in VAULT_PASSWORD_FIXTURE GH_TOKEN GITHUB_TOKEN SSH_AUTH_SOCK; do',
+    'for name in VAULT_PASSWORD_FIXTURE GH_TOKEN GITHUB_TOKEN SSH_AUTH_SOCK KUBECONFIG; do',
     '  test -z "$(printenv "$name")" || fail "$name is set"',
     "done",
+    'test ! -e "$HOME/.kube/config" || fail "Kubeconfig is present"',
     'test -z "$(git remote)" || fail "Git remote is configured"',
     'grep -qx "committed content" sample.txt || fail "Expected committed file content"',
     'printf "sandbox update\n" > sample.txt',
