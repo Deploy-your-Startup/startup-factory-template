@@ -3,12 +3,12 @@ set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Usage: scripts/coding-sandbox.sh [hub|PROJECT]
-       scripts/coding-sandbox.sh --prepare [hub|PROJECT]
+Usage: scripts/coding-sandbox.sh [--prepare] [--agent codex|claude] [hub|PROJECT]
        scripts/coding-sandbox.sh --diff SANDBOX
 
-Open Codex in a local Docker Sandbox with a copy of the selected Git HEAD.
---prepare creates the sandbox without opening Codex.
+Open Codex or Claude Code in a local Docker Sandbox with a copy of the selected Git HEAD.
+--prepare creates the sandbox without opening the agent.
+--agent selects the agent (default: codex).
 --diff writes the sandbox's changes as a patch to stdout.
 EOF
 }
@@ -20,18 +20,29 @@ unset SSH_AUTH_SOCK
 
 guest_checkout=/home/agent/workspace/factory-checkout
 
-case "${1:-}" in
-  -h|--help) usage; exit ;;
-  --diff)
-    [ "$#" -eq 2 ] && [[ "$2" =~ ^factory-code-[0-9a-f]{16}$ ]] || fail "Provide a sandbox name printed by this script."
-    exec sbx --no-input exec --workdir "$guest_checkout" "$2" bash -euc '
-      git add --all
-      git --no-pager diff --cached --binary --full-index --no-ext-diff --no-textconv factory-baseline --
-    '
-    ;;
-  --prepare) prepare=1; shift ;;
-  *) prepare=0 ;;
-esac
+if [ "${1:-}" = --diff ]; then
+  [ "$#" -eq 2 ] && [[ "$2" =~ ^factory-code-[0-9a-f]{16}$ ]] || fail "Provide a sandbox name printed by this script."
+  exec sbx --no-input exec --workdir "$guest_checkout" "$2" bash -euc '
+    git add --all
+    git --no-pager diff --cached --binary --full-index --no-ext-diff --no-textconv factory-baseline --
+  '
+fi
+
+agent=codex
+prepare=0
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    -h|--help) usage; exit ;;
+    --prepare) prepare=1; shift ;;
+    --agent)
+      case "${2:-}" in
+        codex|claude) agent="$2"; shift 2 ;;
+        *) fail "Select codex or claude after --agent." ;;
+      esac
+      ;;
+    *) break ;;
+  esac
+done
 
 [ "$#" -le 1 ] || fail "Select one registered project or hub."
 target="${1:-hub}"
@@ -64,7 +75,7 @@ if [ "$(sbx --no-input settings get ssh.agentForwardingEnabled)" = true ] &&
 fi
 
 sandbox="factory-code-$(openssl rand -hex 8)"
-printf 'Creating %s for %s at %s\n' "$sandbox" "$target" "$baseline" >&2
+printf 'Creating %s (%s) for %s at %s\n' "$sandbox" "$agent" "$target" "$baseline" >&2
 # Use the official kit directly, independent of locally configured shortcuts.
 # No workspace path means the checkout lives on the VM's own filesystem.
 bash "$root/scripts/with-factory-kit.sh" create --name "$sandbox" --skills=off --static-mcp none \
@@ -72,7 +83,7 @@ bash "$root/scripts/with-factory-kit.sh" create --name "$sandbox" --skills=off -
   --deny-network github.com --deny-network '*.github.com' \
   --deny-network '*.hetzner.cloud' --deny-network api.cloudflare.com \
   --deny-network localhost --deny-network host.docker.internal \
-  docker.io/sbx/codex:latest >&2
+  "docker.io/sbx/$agent:latest" >&2
 
 printf 'Sandbox: %s\n' "$sandbox" >&2
 sbx --no-input exec "$sandbox" bash -euc '
@@ -98,6 +109,6 @@ sbx --no-input exec --workdir "$guest_checkout" "$sandbox" bash -euc '
 if [ "$prepare" -eq 1 ]; then
   printf '%s\n' "$sandbox"
 else
-  sbx run --name "$sandbox" --workdir "$guest_checkout" --env GH_TOKEN= --env GITHUB_TOKEN=
+  sbx run --name "$sandbox" --workdir "$guest_checkout" --env GH_TOKEN= --env GITHUB_TOKEN= "$agent"
   printf 'Collect changes with: scripts/coding-sandbox.sh --diff %s > sandbox.patch\n' "$sandbox" >&2
 fi

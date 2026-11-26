@@ -137,7 +137,8 @@ Then pick one workspace from the Factory root.
 
 ```bash
 ./scripts/coding-sandbox.sh          # Factory hub
-./scripts/coding-sandbox.sh my-app   # one registered project
+./scripts/coding-sandbox.sh my-app                # one registered project
+./scripts/coding-sandbox.sh --agent claude my-app # Claude Code
 ```
 
 Each session starts from the selected repository's committed snapshot. The
@@ -153,9 +154,10 @@ files. The starter disables shared skills and external MCP servers, skips SSH
 agent forwarding and blocks GitHub and common deployment endpoints. For
 dependencies, it uses your Docker Sandboxes network policy.
 
-When Codex exits, use the printed `--diff` command to export a patch. Review it
+Claude Code uses its own account sign-in when prompted. When the agent exits,
+use the printed `--diff` command to export a patch. Review it
 before applying it to your checkout. Use `--prepare` to create a sandbox without
-launching Codex. Local bootstrap and Vault operations use `startup` from your
+launching the agent. Local bootstrap and Vault operations use `startup` from your
 own terminal with the project's configured credential backend.
 
 +## Optional agent loop

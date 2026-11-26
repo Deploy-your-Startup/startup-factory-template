@@ -31,7 +31,7 @@ function fixture(t) {
   return root;
 }
 
-test("GIVEN a Factory registry WHEN the target is unknown, outside the registry or a symlink THEN the starter refuses it", (t) => {
+test("GIVEN a Factory registry WHEN the target or agent is invalid THEN the starter refuses it", (t) => {
   const root = fixture(t);
   const startupDir = join(root, "projects/startups");
   mkdirSync(startupDir, { recursive: true });
@@ -45,11 +45,12 @@ test("GIVEN a Factory registry WHEN the target is unknown, outside the registry 
     assert.equal(result.status, 1);
     assert.match(result.stderr, message);
   }
+  const unsupported = invoke(root, "bash", ["scripts/coding-sandbox.sh", "--agent", "shell"]);
+  assert.equal(unsupported.status, 1);
+  assert.match(unsupported.stderr, /Select codex or claude/);
 });
 
-test("GIVEN committed code and local dummy secrets WHEN opening a real sandbox THEN only the committed snapshot is available and edits return as a patch", {
-  skip: process.env.FACTORY_TEST_CODING_SANDBOX !== "1" && "Requires a signed-in local Docker Sandboxes host",
-}, (t) => {
+function checkSandbox(t, agent) {
   const root = fixture(t);
   for (const file of ["pyproject.toml", "uv.lock"]) {
     copyFileSync(new URL("../../" + file, import.meta.url), join(root, file));
@@ -70,7 +71,8 @@ test("GIVEN committed code and local dummy secrets WHEN opening a real sandbox T
   writeFileSync(join(checkout, ".env"), "DUMMY_LOCAL_SECRET");
   writeFileSync(join(checkout, "sample.txt"), "uncommitted content\n");
 
-  const result = invoke(root, "bash", ["scripts/coding-sandbox.sh", "--prepare", "sample"], {
+  const agentOption = agent === "claude" ? ["--agent", "claude"] : [];
+  const result = invoke(root, "bash", ["scripts/coding-sandbox.sh", ...agentOption, "--prepare", "sample"], {
     env: { ...env, VAULT_PASSWORD_FIXTURE: "dummy", GH_TOKEN: "dummy", SSH_AUTH_SOCK: "/dummy/socket" },
   });
   const sandbox = /Sandbox: (factory-code-[0-9a-f]{16})/.exec(result.stderr)?.[1];
@@ -79,7 +81,9 @@ test("GIVEN committed code and local dummy secrets WHEN opening a real sandbox T
   assert.ok(sandbox);
 
   const inspection = JSON.parse(run(root, "sbx", ["inspect", sandbox, "--json"]));
+  assert.equal(inspection.agent, agent);
   assert.deepEqual(inspection.host_mounts, []);
+  assert.match(run(root, "sbx", ["exec", sandbox, agent, "--version"]), /\d+\.\d+\.\d+/);
   const mcpProbe = [
     "import json, os, urllib.request",
     "url = os.environ['MCP_GATEWAY_URL']",
@@ -98,7 +102,7 @@ test("GIVEN committed code and local dummy secrets WHEN opening a real sandbox T
     "tools = request('tools/list', {}, 2)['result']['tools']",
     "assert {tool['name'] for tool in tools} <= {'code-mode', 'mcp-exec'}",
   ].join("\n");
-  run(root, "sbx", ["exec", sandbox, "python3", "-c", mcpProbe]);
+  run(root, "sbx", ["exec", sandbox, "/opt/factory/venv/bin/python", "-c", mcpProbe]);
   for (const url of ["https://api.github.com/", "https://api.hetzner.cloud/", "https://api.cloudflare.com/"]) {
     const check = invoke(root, "sbx", ["policy", "check", "http", "--sandbox", sandbox, url]);
     assert.match(check.stdout, /^\s*Denied:/m, check.stderr + check.stdout);
@@ -125,4 +129,10 @@ test("GIVEN committed code and local dummy secrets WHEN opening a real sandbox T
   assert.match(patch, /diff --git a\/new-file b\/new-file/);
   assert.doesNotMatch(patch, /DUMMY_|uncommitted content/);
   assert.match(run(checkout, "git", ["diff", "--", "sample.txt"]), /^\+uncommitted content$/m);
-});
+}
+
+for (const agent of ["codex", "claude"]) {
+  test("GIVEN committed code and local dummy secrets WHEN preparing " + agent + " THEN the sandbox contains the tools and returns edits as a patch", {
+    skip: process.env.FACTORY_TEST_CODING_SANDBOX !== "1" && "Requires a signed-in local Docker Sandboxes host",
+  }, (t) => checkSandbox(t, agent));
+}
