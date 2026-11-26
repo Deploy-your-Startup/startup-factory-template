@@ -129,7 +129,31 @@ single startup, use `startup update --check`, `startup update` and
 
 Pulling this workspace with Git does not apply upstream Factory template changes.
 
-## Optional agent loop
+## Code in a local sandbox
+
+Install Docker Sandboxes and sign in with your Docker account. Set up the
+interactive Codex login on the host once with `sbx secret set openai --oauth`.
+Then pick one workspace from the Factory root.
+
+```bash
+./scripts/coding-sandbox.sh          # Factory hub
+./scripts/coding-sandbox.sh my-app   # one registered project
+```
+
+Each session starts from the selected repository's committed snapshot. The
+sandbox has no host checkout mounted. Local edits, untracked files, other
+checkouts and Git credentials stay on the host. Review the files committed in
+the snapshot before sharing them with Codex, including any encrypted Vault
+files. The starter disables shared skills and external MCP servers, skips SSH
+agent forwarding and blocks GitHub and common deployment endpoints. For
+dependencies, it uses your Docker Sandboxes network policy.
+
+When Codex exits, use the printed `--diff` command to export a patch. Review it
+before applying it to your checkout. Use `--prepare` to create a sandbox without
+launching Codex. Local bootstrap and Vault operations use `startup` from your
+own terminal with the project's configured credential backend.
+
++## Optional agent loop
 
 Run `scripts/init.sh --with-sprowi` only when you want the Sprowi agent loop. It needs
 Docker Desktop, sbx and an engine account. See [docs/sprowi.md](docs/sprowi.md) for
