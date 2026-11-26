@@ -147,6 +147,13 @@ Docker builds the tools kit on first use and reuses the build cache. To build
 the kit separately, run `bash scripts/with-factory-kit.sh build`.
 Cluster access requires a separate connection and credentials.
 
+For live pod and deployment status, run
+`bash scripts/with-factory-kit.sh status factory-live-status` on your Mac.
+This creates a separate sandbox with the live Factory checkout and a
+`cluster_status` tool. The tool uses existing host Kubernetes contexts,
+accepts only a registered startup name, and returns health counts and names.
+Its executable and project allowlist are stored outside the checkout.
+
 The sandbox has no host checkout mounted. Local edits, untracked files, other
 checkouts and Git credentials stay on the host. Review the files committed in
 the snapshot before sharing them with Codex, including any encrypted Vault
