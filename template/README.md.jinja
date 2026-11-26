@@ -154,10 +154,10 @@ This creates a separate sandbox with the live Factory checkout and a
 accepts only a registered startup name, and returns health counts and names.
 Its executable and project allowlist are stored outside the checkout.
 
-The sandbox has no host checkout mounted. Local edits, untracked files, other
-checkouts and Git credentials stay on the host. Review the files committed in
-the snapshot before sharing them with Codex, including any encrypted Vault
-files. The starter disables shared skills and external MCP servers, skips SSH
+For sessions started with `coding-sandbox.sh`, local edits, untracked files,
+other checkouts and Git credentials stay on the host. Review the committed
+snapshot before opening it in a sandbox, including any encrypted Vault files.
+The starter disables shared skills and external MCP servers, skips SSH
 agent forwarding and blocks GitHub and common deployment endpoints. For
 dependencies, it uses your Docker Sandboxes network policy.
 
@@ -167,7 +167,7 @@ before applying it to your checkout. Use `--prepare` to create a sandbox without
 launching the agent. Local bootstrap and Vault operations use `startup` from your
 own terminal with the project's configured credential backend.
 
-+## Optional agent loop
+## Optional agent loop
 
 Run `scripts/init.sh --with-sprowi` only when you want the Sprowi agent loop. It needs
 Docker Desktop, sbx and an engine account. See [docs/sprowi.md](docs/sprowi.md) for
