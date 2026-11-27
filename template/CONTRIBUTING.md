@@ -7,7 +7,8 @@ repository's AGENTS.md and contributor documentation first.
 
 Choose the repository that owns the change. Create a branch from its current
 main and run its checks. With write access, push the branch to that repository
-and open a pull request.
+and open a pull request. For a single-file change, you can also use the pencil
+icon on GitHub and follow the prompts to propose your edit.
 Never push personal application code or portfolio data into a tooling repository.
 
 For Factory improvements, use the template source recorded as `_src_path` in
