@@ -33,9 +33,22 @@ case "${1:-}" in
     ;;
   create)
     shift
-    stage_kit
+    profile=coding
+    if [ "${1:-}" = --profile ]; then
+      profile="${2:-}"
+      shift 2
+    fi
+    case "$profile" in
+      coding)
+        stage_kit
+        set -- --kit "$root/sandbox/kits/images" --kit "$kit" "$@"
+        ;;
+      marketing) ;;
+      *) printf 'Unknown sandbox profile: %s\n' "$profile" >&2; exit 2 ;;
+    esac
     use_oci_builder
-    sbx create --kit "$kit" "$@"
+    sbx create --kit "$root/sandbox/kits/mise" --kit "$root/sandbox/kits/boundary" \
+      --kit "$root/sandbox/kits/github-subdomains" "$@"
     ;;
   add)
     [ "$#" -eq 2 ] || exit 2

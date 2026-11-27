@@ -153,3 +153,5 @@ A missing remote branch or inaccessible origin fails explicitly without switchin
 branches. Inspect the intended base and resolve these conditions before claiming
 that a checkout is current. A registered origin migration still requires shared
 history. Sync does not install a Factory template release.
+
+See [shared sandbox profiles](sandbox-profiles.md) for the common runtime and role boundaries.

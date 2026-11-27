@@ -3,12 +3,13 @@ set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Usage: scripts/coding-sandbox.sh [--prepare] [--agent codex|claude] [hub|PROJECT]
+Usage: scripts/coding-sandbox.sh [--prepare] [--agent codex|claude] [--profile coding|marketing] [hub|PROJECT]
        scripts/coding-sandbox.sh --diff SANDBOX
 
 Open Codex or Claude Code in a local Docker Sandbox with a copy of the selected Git HEAD.
 --prepare creates the sandbox without opening the agent.
 --agent selects the agent (default: codex).
+--profile marketing opens a draft-only workspace without Factory/cluster tools.
 --diff writes the sandbox's changes as a patch to stdout.
 EOF
 }
@@ -29,11 +30,18 @@ if [ "${1:-}" = --diff ]; then
 fi
 
 agent=codex
+profile=coding
 prepare=0
 while [ "$#" -gt 0 ]; do
   case "$1" in
     -h|--help) usage; exit ;;
     --prepare) prepare=1; shift ;;
+    --profile)
+      case "${2:-}" in
+        coding|marketing) profile="$2"; shift 2 ;;
+        *) fail "Select coding or marketing after --profile." ;;
+      esac
+      ;;
     --agent)
       case "${2:-}" in
         codex|claude) agent="$2"; shift 2 ;;
@@ -78,7 +86,7 @@ sandbox="factory-code-$(openssl rand -hex 8)"
 printf 'Creating %s (%s) for %s at %s\n' "$sandbox" "$agent" "$target" "$baseline" >&2
 # Use the official kit directly, independent of locally configured shortcuts.
 # No workspace path means the checkout lives on the VM's own filesystem.
-bash "$root/scripts/with-factory-kit.sh" create --name "$sandbox" --skills=off --static-mcp none \
+bash "$root/scripts/with-factory-kit.sh" create --profile "$profile" --name "$sandbox" --skills=off --static-mcp none \
   --env GH_TOKEN= --env GITHUB_TOKEN= \
   --deny-network github.com --deny-network '*.github.com' \
   --deny-network '*.hetzner.cloud' --deny-network api.cloudflare.com \
