@@ -9,6 +9,17 @@ Projects should start on a working foundation so their owners can focus on the
 questions that matter: What do people need? Does this feature help? Will they
 use it? What should we try next?
 
+## Bring the result back to the owner
+
+We want an owner to be able to describe an idea or choose one the Factory
+suggests, then agree on a small experiment. Before launch, the owner chooses
+what user action would count, how much evidence is enough and when to look.
+
+Today, Sprowi can evaluate observations the owner records. Our goal is for it
+to collect the agreed measurements and report back after the experiment with
+the result, its limits and a suggested next step. The owner decides whether to
+continue, change the experiment or stop.
+
 ## We take care of the harness
 
 The harness brings together project templates, agent instructions, predictable

@@ -90,6 +90,30 @@ deployment and template updates; never run Ansible directly or edit `deployment/
   nodes; query each startup in its own namespace and treat node load, outages and
   maintenance as affecting every attached startup.
 
+## Actions usage and deployment updates
+
+GitHub-hosted checks in private repositories draw from the repository owner's
+included usage. Open the owner's GitHub billing dashboard to find the largest
+repositories and enable included-usage alerts. Compare total runner time across
+jobs as well as the elapsed time you wait for a PR.
+
+1. From the Factory, run `scripts/update-deployments.sh` to preview the shared
+   release available for each registered startup.
+2. In one startup, run `startup update --check`, then
+   `startup update --version <release>`. Review the workflow pin and run the
+   project's local checks before opening a PR.
+3. Compare a representative PR and its merge with the previous release. In the
+   push run, check the preparation summary for PR build reuse. If the browser job
+   summary includes an image build time, record it with the total runner minutes.
+   Confirm that all required scenarios passed.
+4. Once the pilot is healthy, repeat the reviewed update for the other
+   startups. To roll back, select the previous release with
+   `startup update --version <previous-release>` and review and commit the change.
+
+Use a separate `startup template update --dry-run` to preview changes to an
+application's workflow settings or Dependabot configuration. Keep deliberate
+project overrides when reviewing the diff.
+
 ## Guardrails
 
 - Ask before destructive operations: deleting resources, rotating secrets,
@@ -129,3 +153,5 @@ A missing remote branch or inaccessible origin fails explicitly without switchin
 branches. Inspect the intended base and resolve these conditions before claiming
 that a checkout is current. A registered origin migration still requires shared
 history. Sync does not install a Factory template release.
+
+See [shared sandbox profiles](sandbox-profiles.md) for the common runtime and role boundaries.
