@@ -1,0 +1,5 @@
+# syntax=docker/sandbox-kit:3
+schemaVersion: '3'
+kind: mixin
+displayName: factory-tools
+description: Locked Startup CLI and kubectl for local Factory sandboxes.

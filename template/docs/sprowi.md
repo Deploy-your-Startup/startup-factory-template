@@ -113,7 +113,7 @@ things the loop would otherwise have to guess: the directory it runs in, and
 the runtime the project pins. Without it the checks run against whatever node
 the sandbox image happens to ship rather than the version in the project's
 `mise.toml` — a wrong test bench, not just an ugly command. mise is not in the
-sandbox images, so `sprowi/sandbox/kits/mise` installs it into every sandbox,
+sandbox images, so `sandbox/kits/mise` installs it into every sandbox,
 from npm rather than the official installer, because that one downloads its
 binary from `github.com` and every Sprowi kit denies that host.
 
@@ -685,3 +685,5 @@ a step.
   what `init` wrote before trusting it.
 - There is no CI workflow and no Slack bridge. Sprowi runs on the machine you
   start it from.
+
+See [shared sandbox profiles](sandbox-profiles.md) for the common runtime and role boundaries.

@@ -129,6 +129,44 @@ single startup, use `startup update --check`, `startup update` and
 
 Pulling this workspace with Git does not apply upstream Factory template changes.
 
+## Code in a local sandbox
+
+Install Docker Sandboxes and sign in with your Docker account. Set up the
+interactive Codex login on the host once with `sbx secret set openai --oauth`.
+Then pick one workspace from the Factory root.
+
+```bash
+./scripts/coding-sandbox.sh          # Factory hub
+./scripts/coding-sandbox.sh my-app                # one registered project
+./scripts/coding-sandbox.sh --agent claude my-app # Claude Code
+```
+
+Each session starts from the selected repository's committed snapshot. The
+sandbox image includes the Factory's locked Startup CLI and a kubectl client.
+Docker builds the tools kit on first use and reuses the build cache. To build
+the kit separately, run `bash scripts/with-factory-kit.sh build`.
+Cluster access requires a separate connection and credentials.
+
+For live pod and deployment status, run
+`bash scripts/with-factory-kit.sh status factory-live-status` on your Mac.
+This creates a separate sandbox with the live Factory checkout and a
+`cluster_status` tool. The tool uses existing host Kubernetes contexts,
+accepts only a registered startup name, and returns health counts and names.
+Its executable and project allowlist are stored outside the checkout.
+
+For sessions started with `coding-sandbox.sh`, local edits, untracked files,
+other checkouts and Git credentials stay on the host. Review the committed
+snapshot before opening it in a sandbox, including any encrypted Vault files.
+The starter disables shared skills and external MCP servers, skips SSH
+agent forwarding and blocks GitHub and common deployment endpoints. For
+dependencies, it uses your Docker Sandboxes network policy.
+
+Claude Code uses its own account sign-in when prompted. When the agent exits,
+use the printed `--diff` command to export a patch. Review it
+before applying it to your checkout. Use `--prepare` to create a sandbox without
+launching the agent. Local bootstrap and Vault operations use `startup` from your
+own terminal with the project's configured credential backend.
+
 ## Optional agent loop
 
 Run `scripts/init.sh --with-sprowi` only when you want the Sprowi agent loop. It needs

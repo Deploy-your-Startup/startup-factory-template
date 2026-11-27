@@ -1,0 +1,24 @@
+# syntax=docker/sandbox-kit:3
+schemaVersion: '3'
+kind: mixin
+displayName: factory-boundary
+capabilities:
+- type: com.docker.sandbox/network-policy@1
+  config:
+    install:
+      deny:
+      - 'github.com'
+      - '*.github.com'
+      - 'raw.githubusercontent.com'
+      - '*.hetzner.cloud'
+      - 'api.cloudflare.com'
+      - 'localhost'
+      - 'host.docker.internal'
+    runtime:
+      deny:
+      - 'github.com'
+      - 'raw.githubusercontent.com'
+      - '*.hetzner.cloud'
+      - 'api.cloudflare.com'
+      - 'localhost'
+      - 'host.docker.internal'

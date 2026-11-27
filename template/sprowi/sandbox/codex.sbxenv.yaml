@@ -6,8 +6,10 @@ args:
 env:
   SPROWI_CHATGPT_ACCOUNT_ID: ${{ env.args.accountId }}
 kits:
-  - ./kits/mise
-  - ./kits/images
+  - ../../sandbox/kits/boundary
+  - ../../sandbox/kits/github-subdomains
+  - ../../sandbox/kits/mise
+  - ../../sandbox/kits/images
   - source: ./kits/sprowi-codex
 secrets:
   sprowi-codex:

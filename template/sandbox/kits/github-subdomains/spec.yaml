@@ -1,0 +1,11 @@
+# syntax=docker/sandbox-kit:3
+# Copilot needs api.github.com during authentication; all other roles use this kit.
+schemaVersion: '3'
+kind: mixin
+displayName: factory-deny-github-subdomains
+capabilities:
+- type: com.docker.sandbox/network-policy@1
+  config:
+    runtime:
+      deny:
+      - '*.github.com'
