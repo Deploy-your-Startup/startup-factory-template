@@ -33,9 +33,22 @@ case "${1:-}" in
     ;;
   create)
     shift
+    profile=coding
+    if [ "${1:-}" = --profile ]; then
+      profile="${2:-}"
+      shift 2
+    fi
+    case "$profile" in
+      coding) ;;
+      marketing)
+        # Draft-only role: runtime and boundary, no Factory CLI or cluster tools.
+        exec sbx create --kit "$root/sandbox/kits/mise" --kit "$root/sandbox/kits/boundary" "$@"
+        ;;
+      *) printf 'Unknown sandbox profile: %s\n' "$profile" >&2; exit 2 ;;
+    esac
     stage_kit
     use_oci_builder
-    sbx create --kit "$kit" "$@"
+    sbx create --kit "$root/sandbox/kits/mise" --kit "$root/sandbox/kits/images" --kit "$root/sandbox/kits/boundary" --kit "$kit" "$@"
     ;;
   add)
     [ "$#" -eq 2 ] || exit 2

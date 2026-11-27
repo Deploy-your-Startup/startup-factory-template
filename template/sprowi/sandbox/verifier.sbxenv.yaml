@@ -22,8 +22,9 @@ additionalWorkspaces:
 env:
   SPROWI_CONFIG: ${{ env.args.config }}
 kits:
-  - ./kits/mise
-  - ./kits/images
+  - ../../sandbox/kits/boundary
+  - ../../sandbox/kits/mise
+  - ../../sandbox/kits/images
   - ./kits/verifier
 sandboxOptions:
   cpus: 4

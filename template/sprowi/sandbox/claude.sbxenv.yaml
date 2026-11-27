@@ -1,7 +1,8 @@
 schemaVersion: "1"
 kits:
-  - ./kits/mise
-  - ./kits/images
+  - ../../sandbox/kits/boundary
+  - ../../sandbox/kits/mise
+  - ../../sandbox/kits/images
   - source: ./kits/sprowi-claude
 secrets:
   sprowi-claude:

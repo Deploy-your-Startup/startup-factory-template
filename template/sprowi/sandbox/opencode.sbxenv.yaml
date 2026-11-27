@@ -5,8 +5,9 @@ args:
   cli:
     required: true
 kits:
-  - ./kits/mise
-  - ./kits/images
+  - ../../sandbox/kits/boundary
+  - ../../sandbox/kits/mise
+  - ../../sandbox/kits/images
   - source: ./kits/sprowi-opencode
     args:
       cli: ${{ env.args.cli }}
