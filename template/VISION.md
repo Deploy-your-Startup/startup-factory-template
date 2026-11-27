@@ -56,8 +56,7 @@ The factory is a versioned Copier template. Each owner gets an independent
 workspace and can review and apply shared improvements through template updates.
 The tooling repositories remain in the registry so everyone can inspect their
 implementation, propose changes and contribute fixes, tests and documentation.
-Contributors use their own forks and pull requests; cloning a repository does
-not grant upstream write access.
+Contributors propose changes through pull requests.
 
 Distribute reusable knowledge, never personal startup lists, domains, production
 contexts, tasks, account identifiers, credentials or private machine settings.

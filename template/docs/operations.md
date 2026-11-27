@@ -34,8 +34,8 @@ template; update existing guidance instead of writing launch reports.
 repositories. Read it with `scripts/registry.sh`; never run setup against an
 unreviewed registry. Set `deployed`, `url` and `kubectl_context` only after
 verifying Actions, DNS, HTTPS and cluster access, with one context and the right
-namespace per startup. Keep the tooling list so everyone can inspect, fork and
-contribute; do not assume upstream write access.
+namespace per startup. Keep the tooling list so everyone can inspect the code and
+propose changes.
 `evidence_repo` names the private `OWNER/NAME` repository for pull request
 review screenshots; `startup evidence upload` creates it on first use and prints
 the links to embed, so screenshots never enter code history.
