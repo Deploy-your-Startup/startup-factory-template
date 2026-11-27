@@ -35,6 +35,8 @@ function fixture(engine = "claude") {
     const result = spawnSync("git", ["-c", "user.name=Discovery integration", "-c", "user.email=test@example.invalid", "-c", "commit.gpgsign=false", ...args], { cwd: factory, encoding: "utf8" });
     assert.equal(result.status, 0, result.stderr); return result.stdout;
   };
+  git("-C", "projects/startups/board-club", "init", "-q");
+  git("-C", "projects/startups/board-club", "remote", "add", "origin", "git@github.com:example-owner/board-club.git");
   git("init", "-q"); git("config", "commit.gpgsign", "false");
   git("add", "-A"); git("commit", "-qm", "fixture");
   const executable = (name, text) => writeFileSync(join(bin, name), `#!${process.execPath}\n${text}`, { mode: 0o755 });

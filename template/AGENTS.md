@@ -1,15 +1,19 @@
 # Factory agent instructions
 
-This hub holds the registry, scripts and optional Sprowi configuration;
-application code lives in separate repositories under `projects/`.
-Read [VISION.md](VISION.md) before product, design or positioning changes.
-Keep personal portfolio data out of shared templates.
+The hub holds the registry, scripts and Sprowi configuration. Apps live under
+`projects/`. Read [VISION.md](VISION.md) before product, design or positioning
+changes. Keep personal portfolio data out of shared templates.
+
+Factory sessions operate across all registered startups with the owner's
+permissions and approvals. Each startup session uses its own checkout,
+credentials and namespace. Follow its repository's `AGENTS.md`.
+[Workspace setup](docs/operations.md#workspace-access)
 
 ## Start with the task
 
 - Reusable Factory rules, docs and scripts: propose a PR in the shared template
   recorded in `.copier-answers.yml`. See [CONTRIBUTING.md](CONTRIBUTING.md).
-  After merge and release, other Factory owners can adopt the improvement with
+  Owners adopt released changes with
   `startup template update`. Keep owner-specific changes in this instance.
 - Questions, reviews and planning: inspect local files; no automatic sync.
 - Code changes: inspect status and the target repository's `AGENTS.md`, then

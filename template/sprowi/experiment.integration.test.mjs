@@ -17,7 +17,12 @@ function throwawayHub() {
     });
   }
   writeFileSync(join(hub, "projects.yaml"), "projects:\n  - name: demo-startup\n    repo: git@github.com:example/demo-startup.git\n");
-  mkdirSync(join(hub, "projects/startups/demo-startup"), { recursive: true });
+  const startup = join(hub, "projects/startups/demo-startup");
+  mkdirSync(startup, { recursive: true });
+  for (const args of [["init", "-q"], ["remote", "add", "origin", "https://github.com/example/demo-startup"]]) {
+    const result = spawnSync("git", args, { cwd: startup, encoding: "utf8" });
+    assert.equal(result.status, 0, result.stderr);
+  }
   mkdirSync(join(hub, "ideas"));
   writeFileSync(join(hub, "ideas/001-demo.md"), demoIdea("test — creators are reachable and the objection is testable"));
   return hub;
