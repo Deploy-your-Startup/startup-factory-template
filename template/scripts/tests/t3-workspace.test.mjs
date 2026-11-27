@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
-import { cpSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
@@ -38,9 +38,12 @@ test("GIVEN a generated Factory WHEN rendering the T3 pilot THEN one private wor
   assert.equal(service.ports[0].port, 3773);
   assert.equal(service.ports[0].targetPort, workspace.ports[0].name);
   assert.equal(workspace.ports[0].containerPort, 3773);
-  assert.equal(workspace.image, "factory-t3-pilot:0.1.13");
+  assert.equal(workspace.image, "factory-t3-pilot:0.1.13-factory.1");
   assert.equal(workspace.imagePullPolicy, "IfNotPresent");
   assert.equal(pod.automountServiceAccountToken, false);
+  assert.equal(resource("ServiceAccount").metadata.name, pod.serviceAccountName);
+  assert.equal(resource("ServiceAccount").automountServiceAccountToken, false);
+  assert.ok(pod.volumes.every((volume) => !volume.secret && !volume.projected));
   assert.equal(pod.securityContext.runAsUser, 1000);
   assert.equal(workspace.securityContext.readOnlyRootFilesystem, true);
   assert.equal(workspace.securityContext.allowPrivilegeEscalation, false);
@@ -66,6 +69,72 @@ test("GIVEN a generated Factory WHEN rendering the T3 pilot THEN one private wor
   assert.equal(https.to[0].ipBlock.cidr, "0.0.0.0/0");
   for (const cidr of ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "169.254.0.0/16"]) {
     assert.ok(https.to[0].ipBlock.except.includes(cidr), cidr);
+  }
+});
+
+test("GIVEN a renamed startup with local and remote grants WHEN rendering THEN it uses its own home, identity and kubeconfigs", options, (t) => {
+  const temp = mkdtempSync(join(tmpdir(), "factory-t3-startup-"));
+  t.after(() => rmSync(temp, { recursive: true, force: true }));
+  cpSync(base, join(temp, "source"), { recursive: true });
+  const overlay = join(temp, "owner");
+  mkdirSync(overlay);
+  writeFileSync(join(overlay, "kustomization.yaml"), [
+    "apiVersion: kustomize.config.k8s.io/v1beta1",
+    "kind: Kustomization",
+    "namespace: another-startup-t3",
+    "resources: [../source/profiles/startup]",
+    "components: [../source/access/local-api, ../source/access/remote-api, ../source/access/github]",
+  ].join("\n"));
+  const resources = render(overlay);
+  const resource = (kind) => resources.find((r) => r.kind === kind);
+  assert.equal(resource("Namespace").metadata.name, "another-startup-t3");
+  assert.ok(resources.filter((r) => r.kind !== "Namespace").every((r) => r.metadata.namespace === "another-startup-t3"));
+  const pod = resource("Deployment").spec.template.spec;
+  const container = pod.containers[0];
+  const env = Object.fromEntries(container.env.map((e) => [e.name, e.value]));
+  assert.equal(env.T3_WORKSPACE_PROFILE, "startup");
+  assert.deepEqual(container.env.find((v) => v.name === "GH_TOKEN").valueFrom.secretKeyRef, { name: "t3-github", key: "token" });
+  const volume = (name) => pod.volumes.find((v) => v.name === name);
+  assert.equal(pod.serviceAccountName, resource("ServiceAccount").metadata.name);
+  assert.equal(volume("home").persistentVolumeClaim.claimName, resource("PersistentVolumeClaim").metadata.name);
+  assert.equal(volume("local-identity").projected.sources[0].serviceAccountToken.expirationSeconds, 3600);
+  assert.equal(volume("local-kubeconfig").configMap.name, resource("ConfigMap").metadata.name);
+  assert.equal(volume("remote-kubeconfig").secret.secretName, "t3-remote-kubeconfig");
+  const mount = (name) => container.volumeMounts.find((v) => v.name === name);
+  assert.deepEqual(env.KUBECONFIG.split(":"), [mount("local-kubeconfig"), mount("remote-kubeconfig")].map((v) => v.mountPath + "/config"));
+  const localConfig = JSON.parse(execFileSync("yq", ["-o=json", ".", "-"], { input: resource("ConfigMap").data.config }));
+  assert.equal(localConfig.users[0].user.tokenFile, mount("local-identity").mountPath + "/token");
+  assert.equal(localConfig.clusters[0].cluster["certificate-authority"], mount("local-identity").mountPath + "/ca.crt");
+  assert.deepEqual(resources.filter((r) => /RoleBinding$/.test(r.kind)), []);
+});
+
+test("GIVEN two private APIs WHEN rendering egress THEN each address opens only its chosen TCP port", () => {
+  const script = join(base, "access/api-egress.mjs");
+  const policy = JSON.parse(execFileSync(process.execPath, [script, "sample-t3", "--endpoint", "192.0.2.7", "6443", "--endpoint", "2001:db8::7", "443"]));
+  assert.equal(policy.metadata.namespace, "sample-t3");
+  assert.deepEqual(policy.spec.egress, [
+    { to: [{ ipBlock: { cidr: "192.0.2.7/32" } }], ports: [{ protocol: "TCP", port: 6443 }] },
+    { to: [{ ipBlock: { cidr: "2001:db8::7/128" } }], ports: [{ protocol: "TCP", port: 443 }] },
+  ]);
+  assert.notEqual(spawnSync(process.execPath, [script, "sample-t3", "--endpoint", "0.0.0.0/0", "443"]).status, 0);
+});
+
+test("GIVEN a fresh home WHEN the server starts THEN each profile selects its own default checkout", (t) => {
+  const temp = mkdtempSync(join(tmpdir(), "factory-t3-entrypoint-"));
+  t.after(() => rmSync(temp, { recursive: true, force: true }));
+  const bin = join(temp, "bin");
+  mkdirSync(bin);
+  writeFileSync(join(bin, "t3"), '#!/bin/sh\nprintf "%s\\n" "$PWD" "$@" > "$HOME/invocation"\n', { mode: 0o755 });
+  for (const [profile, checkout] of [["factory", "factory"], ["startup", "project"]]) {
+    const home = join(temp, profile);
+    execFileSync("sh", [join(base, "entrypoint.sh")], { env: {
+      PATH: bin + ":" + process.env.PATH, HOME: home, T3CODE_HOME: join(home, ".t3"), T3_WORKSPACE_PROFILE: profile,
+    } });
+    const path = join(home, checkout);
+    const invocation = readFileSync(join(home, "invocation"), "utf8").trimEnd().split("\n");
+    assert.equal(invocation[0], path);
+    assert.equal(invocation.at(-1), path);
+    assert.equal(existsSync(join(home, profile === "factory" ? "project" : "factory")), false);
   }
 });
 

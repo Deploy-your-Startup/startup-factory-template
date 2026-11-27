@@ -2,8 +2,13 @@
 set -eu
 
 umask 077
-mkdir -p "$HOME/factory" "$T3CODE_HOME"
-cd "$HOME/factory"
+case "${T3_WORKSPACE_PROFILE:-factory}" in
+  factory) checkout="$HOME/factory" ;;
+  startup) checkout="$HOME/project" ;;
+  *) echo "Unknown T3 workspace profile." >&2; exit 1 ;;
+esac
+mkdir -p "$checkout" "$T3CODE_HOME"
+cd "$checkout"
 
 # Ordinary headless startup prints a pairing credential and a QR code.
 # The operator requests a fresh pairing link interactively when needed.

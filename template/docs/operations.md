@@ -28,6 +28,24 @@ source and contribute it back. After each launch, turn recurring issues into
 concise rules and integration or E2E checks in the owning CLI, shared workflow or
 template; update existing guidance instead of writing launch reports.
 
+## Workspace access
+
+For a Factory owner session, use the hub registry to find every startup and
+read the relevant checkouts for implementation details. Identify which facts
+come from the registry and which you verified against a checkout or live
+service. Use the same owner grants and approvals as on the local Factory.
+
+Give each startup workspace its own filesystem, home and authentication state.
+Seed only the registered startup checkout. Scope Git credentials to that
+repository and any cluster credentials to that startup's namespace. Keep the
+hub, sibling repositories and owner credentials in the Factory workspace.
+Separate chats inside one workspace share its files and credentials.
+
+`scripts/coding-sandbox.sh hub` copies the hub's committed files. The named
+project form and startup Sprowi runs take their source from one verified
+checkout. Sprowi discovery runs in the Factory even when its research focuses
+on one startup.
+
 ## Registry
 
 `projects.yaml` records this owner's startups and the public tooling

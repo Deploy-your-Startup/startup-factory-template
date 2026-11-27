@@ -76,13 +76,11 @@ export function resolveProject(name, root = hubRoot) {
       `Unknown project "${name}". The registry knows: ${known.join(", ")}`,
     );
   }
-  const path = join(root, "projects/startups", name);
-  if (!existsSync(path)) {
-    throw new Error(
-      `${name} is registered but not checked out at ${path}. Run scripts/init.sh.`,
-    );
-  }
-  return { ...project, path, slug: githubSlug(project.repo) };
+  const checkout = spawnSync(join(root, "scripts/registry.sh"), ["checkout", name, "startups"], {
+    encoding: "utf8",
+  });
+  if (checkout.status !== 0) throw new Error(checkout.stderr?.trim() || "Could not verify startup checkout.");
+  return { ...project, path: checkout.stdout.trimEnd(), slug: githubSlug(project.repo) };
 }
 
 // git@github.com:owner/repo.git and https://github.com/owner/repo both yield

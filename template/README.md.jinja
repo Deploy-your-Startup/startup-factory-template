@@ -149,8 +149,8 @@ Cluster access requires a separate connection and credentials.
 
 For live pod and deployment status, run
 `bash scripts/with-factory-kit.sh status factory-live-status` on your Mac.
-This creates a separate sandbox with the live Factory checkout and a
-`cluster_status` tool. The tool uses existing host Kubernetes contexts,
+This creates an owner-only sandbox with the live Factory checkout and a
+`cluster_status` tool for portfolio questions. The tool uses existing host Kubernetes contexts,
 accepts only a registered startup name, and returns health counts and names.
 Its executable and project allowlist are stored outside the checkout.
 

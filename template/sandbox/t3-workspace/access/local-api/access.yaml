@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: t3-workspace
+spec:
+  template:
+    spec:
+      containers:
+        - name: t3-workspace
+          env:
+            - name: KUBECONFIG
+              value: /var/run/t3/local-config/config:/var/run/t3/remote-config/config
+          volumeMounts:
+            - name: local-kubeconfig
+              mountPath: /var/run/t3/local-config
+              readOnly: true
+            - name: local-identity
+              mountPath: /var/run/t3/local-identity
+              readOnly: true
+      volumes:
+        - name: local-kubeconfig
+          configMap:
+            name: t3-local-kubeconfig
+        - name: local-identity
+          projected:
+            defaultMode: 0440
+            sources:
+              - serviceAccountToken:
+                  path: token
+                  expirationSeconds: 3600
+              - configMap:
+                  name: kube-root-ca.crt
+                  items:
+                    - key: ca.crt
+                      path: ca.crt

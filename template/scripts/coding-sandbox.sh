@@ -48,24 +48,13 @@ done
 target="${1:-hub}"
 [[ "$target" =~ ^[a-zA-Z0-9][a-zA-Z0-9._-]*$ ]] || fail "Select one registered project or hub."
 root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
-checkout="$root"
-if [ "$target" != hub ]; then
-  checkout=""
-  for section in startups tooling; do
-    entries="$("$root/scripts/registry.sh" "$section")"
-    while IFS=$'\t' read -r name _; do
-      if [ "$name" = "$target" ]; then
-        [ -z "$checkout" ] || fail "Project is registered more than once: $target"
-        checkout="$root/projects/$section/$target"
-      fi
-    done <<< "$entries"
-  done
-  [ -n "$checkout" ] || fail "Unknown project: $target"
-fi
-
-[ -d "$checkout" ] && [ "$(cd -- "$checkout" && pwd -P)" = "$checkout" ] &&
+if [ "$target" = hub ]; then
+  checkout="$root"
   [ "$(git -C "$checkout" rev-parse --show-toplevel 2>/dev/null)" = "$checkout" ] ||
-  fail "Expected a separate Git checkout at $checkout."
+    fail "Expected a separate Git checkout at $checkout."
+else
+  checkout="$("$root/scripts/registry.sh" checkout "$target")"
+fi
 baseline="$(git -C "$checkout" rev-parse --verify HEAD)"
 command -v sbx >/dev/null || fail "Install Docker Sandboxes (sbx) first."
 

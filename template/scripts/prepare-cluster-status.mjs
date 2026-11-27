@@ -37,17 +37,18 @@ if (process.env.SSH_AUTH_SOCK) {
 const gitShow = (checkout, file) => run("/usr/bin/git", ["-C", checkout, "show", "HEAD:" + file], {
   stdio: ["ignore", "pipe", "ignore"],
 });
-const registry = JSON.parse(run(yq, ["-o=json", ".", "-"], { input: gitShow(root, "projects.yaml") }));
+const committedRegistry = gitShow(root, "projects.yaml");
+const registry = JSON.parse(run(yq, ["-o=json", ".", "-"], { input: committedRegistry }));
 const contexts = new Set(run(kubectl, ["--kubeconfig", kubeconfig, "config", "get-contexts", "-o", "name"]).trim().split("\n"));
 const slug = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/;
 const projects = {};
 for (const project of registry.projects ?? []) {
   if (project.deployed !== true || !slug.test(project.name) || !contexts.has(project.kubectl_context)) continue;
-  const checkout = join(root, "projects", "startups", project.name);
   let namespace;
   try {
-    if (realpathSync(checkout) !== checkout ||
-        run("/usr/bin/git", ["-C", checkout, "rev-parse", "--show-toplevel"]).trim() !== checkout) continue;
+    const checkout = run(join(root, "scripts", "registry.sh"), ["checkout", project.name, "startups", "--registry-stdin"], {
+      input: committedRegistry, stdio: ["pipe", "pipe", "ignore"],
+    }).trimEnd();
     namespace = run(yq, ["-r", '.k8s_namespace // ""', "-"], {
       input: gitShow(checkout, "deployment/group_vars/all.yml"),
     }).trim();

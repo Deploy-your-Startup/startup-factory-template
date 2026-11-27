@@ -50,6 +50,31 @@ test("GIVEN a Factory registry WHEN the target or agent is invalid THEN the star
   assert.match(unsupported.stderr, /Select codex or claude/);
 });
 
+test("GIVEN a wrong checkout WHEN starting a project sandbox or a Sprowi check THEN both refuse it before creating a sandbox", (t) => {
+  const root = fixture(t);
+  cpSync(new URL("../../sprowi", import.meta.url), join(root, "sprowi"), { recursive: true });
+  copyFileSync(new URL("../sprowi.sh", import.meta.url), join(root, "scripts/sprowi.sh"));
+  writeFileSync(join(root, "sprowi/projects/sample.json"), "{}");
+  const checkout = join(root, "projects/startups/sample");
+  mkdirSync(checkout, { recursive: true });
+  run(root, "git", ["init", "--quiet"]);
+  function assertRefused(message) {
+    for (const args of [["scripts/coding-sandbox.sh", "--prepare", "sample"], ["scripts/sprowi.sh", "check", "sample"]]) {
+      const result = invoke(root, "bash", args);
+      assert.notEqual(result.status, 0);
+      assert.match(result.stderr, message);
+      assert.doesNotMatch(result.stderr, /unrelated-repository/);
+    }
+  }
+  assertRefused(/Expected a separate Git checkout/);
+  run(checkout, "git", ["init", "--quiet"]);
+  assertRefused(/origin for sample must match/);
+  run(checkout, "git", ["remote", "add", "origin", "https://example.invalid/unrelated-repository"]);
+  assertRefused(/origin for sample must match/);
+  run(checkout, "git", ["remote", "set-url", "origin", "git@example.invalid:sample.git"]);
+  assert.equal(run(root, "bash", ["scripts/registry.sh", "checkout", "sample"]).trim(), checkout);
+});
+
 function checkSandbox(t, agent) {
   const root = fixture(t);
   for (const file of ["pyproject.toml", "uv.lock"]) {

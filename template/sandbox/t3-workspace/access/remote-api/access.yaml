@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: t3-workspace
+spec:
+  template:
+    spec:
+      containers:
+        - name: t3-workspace
+          env:
+            - name: KUBECONFIG
+              value: /var/run/t3/local-config/config:/var/run/t3/remote-config/config
+          volumeMounts:
+            - name: remote-kubeconfig
+              mountPath: /var/run/t3/remote-config
+              readOnly: true
+      volumes:
+        - name: remote-kubeconfig
+          secret:
+            secretName: t3-remote-kubeconfig
+            defaultMode: 0440
