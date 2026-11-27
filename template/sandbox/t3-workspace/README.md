@@ -38,21 +38,22 @@ flowchart LR
    project checkouts at their normal paths below it. For private repositories
    you can stream clean Git clones from your operator machine. Keep account
    tokens, local environment files and your SSH agent on the operator machine.
+   Set `PILOT_CONTEXT` to the intended Kubernetes context in each terminal.
    Register the Factory with T3. Repeat `--track` for deeply nested project
    repositories you want in the same chat.
 
    ```sh
-   kubectl --context "$PILOT_CONTEXT" -n factory-t3-pilot exec deploy/t3-workspace -- \
+   kubectl --context "${PILOT_CONTEXT:?set the pilot context}" -n factory-t3-pilot exec deploy/t3-workspace -- \
      t3 project add /home/node/factory --track /home/node/factory/projects/startups/example-app
    ```
 
 ## Open a chat
 
-Set `PILOT_CONTEXT` to the chosen Kubernetes context. For the first connection,
-keep this port-forward running on your operator machine.
+For the first connection, keep this port-forward running on your operator
+machine.
 
 ```sh
-kubectl --context "$PILOT_CONTEXT" -n factory-t3-pilot port-forward \
+kubectl --context "${PILOT_CONTEXT:?set the pilot context}" -n factory-t3-pilot port-forward \
   --address 127.0.0.1 service/t3-workspace 3773:3773
 ```
 
@@ -60,7 +61,7 @@ In a second private terminal, request a one-time pairing link and open it in
 your browser. Anyone holding an unused link can pair during its validity.
 
 ```sh
-kubectl --context "$PILOT_CONTEXT" -n factory-t3-pilot exec deploy/t3-workspace -- \
+kubectl --context "${PILOT_CONTEXT:?set the pilot context}" -n factory-t3-pilot exec deploy/t3-workspace -- \
   t3 auth pairing create --ttl 5m --base-url http://127.0.0.1:3773
 ```
 
@@ -68,12 +69,11 @@ For a live Codex response, sign in with your chosen account inside the pod.
 The device flow shows a code in your own terminal.
 
 ```sh
-kubectl --context "$PILOT_CONTEXT" -n factory-t3-pilot exec -it deploy/t3-workspace -- \
+kubectl --context "${PILOT_CONTEXT:?set the pilot context}" -n factory-t3-pilot exec -it deploy/t3-workspace -- \
   codex login --device-auth
 ```
 
-For access while your operator machine is off, pair over an existing private
-network or use [T3 Connect](https://github.com/pingdotgg/t3code/blob/v0.1.13/docs/user/remote-access.md).
+For access while your operator machine is off, use [T3 Connect](https://github.com/pingdotgg/t3code/blob/v0.1.13/docs/user/remote-access.md).
 For Connect, run `t3 connect link --headless` inside the pod, authorize the
 environment, and restart the pilot Deployment to pick up the link. Sign in
 to the same T3 account on the other device. The default service has no public
