@@ -17,7 +17,6 @@ capabilities:
     runtime:
       deny:
       - 'github.com'
-      - '*.github.com'
       - 'raw.githubusercontent.com'
       - '*.hetzner.cloud'
       - 'api.cloudflare.com'

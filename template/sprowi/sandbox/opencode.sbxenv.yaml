@@ -6,6 +6,7 @@ args:
     required: true
 kits:
   - ../../sandbox/kits/boundary
+  - ../../sandbox/kits/github-subdomains
   - ../../sandbox/kits/mise
   - ../../sandbox/kits/images
   - source: ./kits/sprowi-opencode

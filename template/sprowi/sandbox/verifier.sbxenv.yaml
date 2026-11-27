@@ -23,6 +23,7 @@ env:
   SPROWI_CONFIG: ${{ env.args.config }}
 kits:
   - ../../sandbox/kits/boundary
+  - ../../sandbox/kits/github-subdomains
   - ../../sandbox/kits/mise
   - ../../sandbox/kits/images
   - ./kits/verifier

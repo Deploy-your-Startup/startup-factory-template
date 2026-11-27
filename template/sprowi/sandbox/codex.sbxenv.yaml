@@ -7,6 +7,7 @@ env:
   SPROWI_CHATGPT_ACCOUNT_ID: ${{ env.args.accountId }}
 kits:
   - ../../sandbox/kits/boundary
+  - ../../sandbox/kits/github-subdomains
   - ../../sandbox/kits/mise
   - ../../sandbox/kits/images
   - source: ./kits/sprowi-codex

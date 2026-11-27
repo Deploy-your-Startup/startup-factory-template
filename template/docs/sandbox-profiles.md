@@ -22,6 +22,10 @@ the Factory CLI kit. Interactive coding retains its VM-local Git archive rather
 than exposing the owner's working directory. Model and browser sessions are never
 reused between profiles.
 
+All profiles block GitHub during installation. During a run, Copilot needs
+`api.github.com` to authenticate through the host proxy. The other profiles
+also block GitHub subdomains at runtime.
+
 To add another role, compose the shared kits and a narrowly scoped role overlay.
 Do not add credentials or service integrations to the shared kits. Keep service
 credentials proxy-managed on the host; verifier profiles must remain credential-free.
